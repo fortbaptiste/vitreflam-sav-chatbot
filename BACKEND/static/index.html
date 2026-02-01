@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" class="scroll-smooth">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -85,6 +85,18 @@
             display: flex; align-items: center; justify-content: center;
             font-weight: bold; font-size: 14px;
         }
+
+        .lang-btn {
+            transition: all 0.15s ease;
+            font-size: 2rem;
+        }
+        .lang-btn:hover {
+            transform: scale(1.2) translateY(-4px);
+        }
+        .lang-btn.selected {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 4px #DC2626;
+        }
     </style>
 </head>
 <body class="font-brutal bg-brutal-red min-h-screen overflow-x-hidden">
@@ -108,7 +120,7 @@
                     <img src="https://www.indixit.com/wp-content/uploads/2016/04/logo-vitreflam.png" alt="Vitreflam" class="h-8 md:h-10">
                 </div>
                 <div class="bg-brutal-black text-brutal-white brutal-border px-4 py-2 md:px-6 md:py-3 shadow-brutal">
-                    <span class="font-bold text-sm md:text-base tracking-wider">SERVICE APRES-VENTE</span>
+                    <span class="font-bold text-sm md:text-base tracking-wider">AFTER-SALES SERVICE</span>
                 </div>
             </div>
         </header>
@@ -122,7 +134,7 @@
                     <h1 class="text-4xl md:text-6xl font-black text-brutal-white mb-2" style="-webkit-text-stroke: 2px #0A0A0A;">
                         VITREFLAM SAV
                     </h1>
-                    <p class="text-brutal-cream font-medium text-lg">Oliver, votre conseiller virtuel</p>
+                    <p class="text-brutal-cream font-medium text-lg" id="subtitleText">Oliver, your virtual advisor</p>
                 </div>
 
                 <!-- Chat Box -->
@@ -137,37 +149,59 @@
                             <div class="font-black text-brutal-white text-lg">OLIVER</div>
                             <div class="font-mono text-brutal-yellow text-sm flex items-center gap-2">
                                 <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                                En ligne
+                                <span id="onlineText">Online</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Email Field -->
                     <div class="bg-brutal-cream p-4 brutal-border-b border-brutal-black">
-                        <label class="block font-bold text-sm mb-2 font-mono">VOTRE EMAIL</label>
-                        <input type="email" id="email" placeholder="exemple@email.com"
+                        <label class="block font-bold text-sm mb-2 font-mono" id="emailLabel">YOUR EMAIL</label>
+                        <input type="email" id="email" placeholder="example@email.com"
                             class="w-full p-3 brutal-border bg-brutal-white font-medium focus:outline-none focus:ring-4 focus:ring-brutal-red">
-                        <p class="text-xs font-mono mt-2 text-brutal-red hidden" id="emailError">Email invalide</p>
+                        <p class="text-xs font-mono mt-2 text-brutal-red hidden" id="emailError">Invalid email</p>
                     </div>
 
-                    <!-- Quick Actions -->
-                    <div class="p-3 brutal-border-b border-brutal-black flex flex-wrap gap-2">
-                        <button onclick="sendQuick('Ma vitre est arrivee cassee')" class="bg-brutal-red text-brutal-white brutal-border px-3 py-2 font-bold text-xs hover-brutal shadow-brutal">CASSE LIVRAISON</button>
-                        <button onclick="sendQuick('J\'ai casse ma vitre au montage')" class="bg-brutal-yellow text-brutal-black brutal-border px-3 py-2 font-bold text-xs hover-brutal shadow-brutal">CASSE MONTAGE</button>
-                        <button onclick="sendQuick('Ou en est ma commande ?')" class="bg-brutal-black text-brutal-white brutal-border px-3 py-2 font-bold text-xs hover-brutal shadow-brutal">SUIVI</button>
+                    <!-- Quick Actions (hidden until language selected) -->
+                    <div id="quickActions" class="hidden p-3 brutal-border-b border-brutal-black flex flex-wrap gap-2">
+                        <button onclick="sendQuick(translations[selectedLang].quickDelivery)" class="bg-brutal-red text-brutal-white brutal-border px-3 py-2 font-bold text-xs hover-brutal shadow-brutal" id="btnDelivery">DELIVERY DAMAGE</button>
+                        <button onclick="sendQuick(translations[selectedLang].quickInstall)" class="bg-brutal-yellow text-brutal-black brutal-border px-3 py-2 font-bold text-xs hover-brutal shadow-brutal" id="btnInstall">INSTALLATION DAMAGE</button>
+                        <button onclick="sendQuick(translations[selectedLang].quickTracking)" class="bg-brutal-black text-brutal-white brutal-border px-3 py-2 font-bold text-xs hover-brutal shadow-brutal" id="btnTracking">TRACKING</button>
                     </div>
 
                     <!-- Messages Area -->
                     <div id="messages" class="h-72 md:h-80 overflow-y-auto p-4 space-y-4 bg-brutal-cream">
-                        <!-- Welcome message -->
+                        <!-- Welcome message with language selection -->
                         <div class="flex gap-3 message-enter">
                             <div class="w-8 h-8 bg-brutal-red brutal-border flex-shrink-0 flex items-center justify-center">
                                 <span class="font-bold text-brutal-white text-xs">O</span>
                             </div>
                             <div class="flex-1">
-                                <div class="bg-brutal-white brutal-border p-3 shadow-brutal inline-block max-w-[90%]">
-                                    <p class="font-medium text-sm">Bonjour ! Je suis <strong class="text-brutal-red">Oliver</strong>, votre conseiller SAV Vitreflam.</p>
-                                    <p class="mt-1 text-sm">Comment puis-je vous aider ?</p>
+                                <div class="bg-brutal-white brutal-border p-4 shadow-brutal inline-block max-w-[90%]">
+                                    <p class="font-bold text-lg mb-3">Hello! Welcome to Vitreflam SAV</p>
+                                    <p class="text-sm mb-4">Please select your language:</p>
+
+                                    <!-- Language Flags -->
+                                    <div id="langSelector" class="flex flex-wrap gap-3 justify-center">
+                                        <button onclick="selectLanguage('fr')" class="lang-btn brutal-border bg-brutal-cream p-2 hover-brutal" title="Francais">
+                                            🇫🇷
+                                        </button>
+                                        <button onclick="selectLanguage('en')" class="lang-btn brutal-border bg-brutal-cream p-2 hover-brutal" title="English">
+                                            🇬🇧
+                                        </button>
+                                        <button onclick="selectLanguage('it')" class="lang-btn brutal-border bg-brutal-cream p-2 hover-brutal" title="Italiano">
+                                            🇮🇹
+                                        </button>
+                                        <button onclick="selectLanguage('es')" class="lang-btn brutal-border bg-brutal-cream p-2 hover-brutal" title="Espanol">
+                                            🇪🇸
+                                        </button>
+                                        <button onclick="selectLanguage('de')" class="lang-btn brutal-border bg-brutal-cream p-2 hover-brutal" title="Deutsch">
+                                            🇩🇪
+                                        </button>
+                                        <button onclick="selectLanguage('zh')" class="lang-btn brutal-border bg-brutal-cream p-2 hover-brutal" title="Chinese">
+                                            🇨🇳
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="text-xs font-mono mt-1 opacity-60" id="welcomeTime"></div>
                             </div>
@@ -194,7 +228,7 @@
                                 <button onclick="removeImage()" class="image-preview-remove">&times;</button>
                             </div>
                             <div class="text-sm font-mono">
-                                <div class="font-bold">Image prete</div>
+                                <div class="font-bold" id="imageReadyText">Image ready</div>
                                 <div id="imageName" class="text-xs opacity-70"></div>
                             </div>
                         </div>
@@ -213,7 +247,7 @@
 
                             <!-- Text Input -->
                             <textarea id="messageInput"
-                                placeholder="Decrivez votre probleme..."
+                                placeholder="Describe your problem..."
                                 rows="1"
                                 onkeydown="handleKey(event)"
                                 class="flex-1 p-3 brutal-border bg-brutal-cream font-medium resize-none focus:outline-none focus:ring-4 focus:ring-brutal-red text-sm"></textarea>
@@ -221,20 +255,20 @@
                             <!-- Send Button -->
                             <button id="sendBtn" onclick="send()"
                                 class="bg-brutal-red text-brutal-white brutal-border px-6 py-3 font-black tracking-wider hover-brutal shadow-brutal disabled:opacity-50 text-sm">
-                                ENVOYER
+                                SEND
                             </button>
                         </div>
                     </div>
 
                 </div>
 
-                <!-- API Config (dev) -->
-                <div class="mt-4 bg-brutal-black brutal-border p-3 shadow-brutal">
+                <!-- API Config (dev) - hidden in production -->
+                <div class="mt-4 bg-brutal-black brutal-border p-3 shadow-brutal hidden">
                     <div class="flex gap-2 items-center">
                         <span class="font-mono text-brutal-yellow text-xs">API:</span>
                         <input type="text" id="webhookUrl" value="/api/chat"
                             class="flex-1 p-2 brutal-border bg-brutal-white font-mono text-xs focus:outline-none">
-                        <div id="status" class="px-3 py-1 brutal-border bg-brutal-yellow font-mono text-xs">En attente</div>
+                        <div id="status" class="px-3 py-1 brutal-border bg-brutal-yellow font-mono text-xs">Waiting</div>
                     </div>
                 </div>
 
@@ -251,10 +285,142 @@
     </main>
 
     <script>
+        // Translations
+        const translations = {
+            fr: {
+                subtitle: "Oliver, votre conseiller virtuel",
+                online: "En ligne",
+                emailLabel: "VOTRE EMAIL",
+                emailError: "Email invalide",
+                emailPlaceholder: "exemple@email.com",
+                placeholder: "Decrivez votre probleme...",
+                send: "ENVOYER",
+                btnDelivery: "CASSE LIVRAISON",
+                btnInstall: "CASSE MONTAGE",
+                btnTracking: "SUIVI",
+                quickDelivery: "Ma vitre est arrivee cassee",
+                quickInstall: "J'ai casse ma vitre au montage",
+                quickTracking: "Ou en est ma commande ?",
+                imageReady: "Image prete",
+                welcome: "Merci ! Comment puis-je vous aider aujourd'hui ?",
+                photoSent: "(Photo envoyee)",
+                photoMessage: "Voici ma photo",
+                error: "Erreur de connexion. Contactez contactglassgroup@gmail.com",
+                header: "SERVICE APRES-VENTE"
+            },
+            en: {
+                subtitle: "Oliver, your virtual advisor",
+                online: "Online",
+                emailLabel: "YOUR EMAIL",
+                emailError: "Invalid email",
+                emailPlaceholder: "example@email.com",
+                placeholder: "Describe your problem...",
+                send: "SEND",
+                btnDelivery: "DELIVERY DAMAGE",
+                btnInstall: "INSTALLATION DAMAGE",
+                btnTracking: "TRACKING",
+                quickDelivery: "My glass arrived broken",
+                quickInstall: "I broke my glass during installation",
+                quickTracking: "Where is my order?",
+                imageReady: "Image ready",
+                welcome: "Thank you! How can I help you today?",
+                photoSent: "(Photo sent)",
+                photoMessage: "Here is my photo",
+                error: "Connection error. Contact contactglassgroup@gmail.com",
+                header: "AFTER-SALES SERVICE"
+            },
+            it: {
+                subtitle: "Oliver, il tuo consulente virtuale",
+                online: "Online",
+                emailLabel: "LA TUA EMAIL",
+                emailError: "Email non valida",
+                emailPlaceholder: "esempio@email.com",
+                placeholder: "Descrivi il tuo problema...",
+                send: "INVIA",
+                btnDelivery: "DANNO CONSEGNA",
+                btnInstall: "DANNO MONTAGGIO",
+                btnTracking: "TRACCIAMENTO",
+                quickDelivery: "Il mio vetro e arrivato rotto",
+                quickInstall: "Ho rotto il vetro durante il montaggio",
+                quickTracking: "Dov'e il mio ordine?",
+                imageReady: "Immagine pronta",
+                welcome: "Grazie! Come posso aiutarti oggi?",
+                photoSent: "(Foto inviata)",
+                photoMessage: "Ecco la mia foto",
+                error: "Errore di connessione. Contatta contactglassgroup@gmail.com",
+                header: "SERVIZIO POST-VENDITA"
+            },
+            es: {
+                subtitle: "Oliver, tu asesor virtual",
+                online: "En linea",
+                emailLabel: "TU EMAIL",
+                emailError: "Email invalido",
+                emailPlaceholder: "ejemplo@email.com",
+                placeholder: "Describe tu problema...",
+                send: "ENVIAR",
+                btnDelivery: "DANO ENTREGA",
+                btnInstall: "DANO MONTAJE",
+                btnTracking: "SEGUIMIENTO",
+                quickDelivery: "Mi cristal llego roto",
+                quickInstall: "Rompi el cristal durante el montaje",
+                quickTracking: "Donde esta mi pedido?",
+                imageReady: "Imagen lista",
+                welcome: "Gracias! Como puedo ayudarte hoy?",
+                photoSent: "(Foto enviada)",
+                photoMessage: "Aqui esta mi foto",
+                error: "Error de conexion. Contacta contactglassgroup@gmail.com",
+                header: "SERVICIO POSTVENTA"
+            },
+            de: {
+                subtitle: "Oliver, Ihr virtueller Berater",
+                online: "Online",
+                emailLabel: "IHRE EMAIL",
+                emailError: "Ungultige Email",
+                emailPlaceholder: "beispiel@email.com",
+                placeholder: "Beschreiben Sie Ihr Problem...",
+                send: "SENDEN",
+                btnDelivery: "LIEFERSCHADEN",
+                btnInstall: "MONTAGESCHADEN",
+                btnTracking: "VERFOLGUNG",
+                quickDelivery: "Mein Glas kam zerbrochen an",
+                quickInstall: "Ich habe das Glas bei der Montage zerbrochen",
+                quickTracking: "Wo ist meine Bestellung?",
+                imageReady: "Bild bereit",
+                welcome: "Danke! Wie kann ich Ihnen heute helfen?",
+                photoSent: "(Foto gesendet)",
+                photoMessage: "Hier ist mein Foto",
+                error: "Verbindungsfehler. Kontaktieren Sie contactglassgroup@gmail.com",
+                header: "KUNDENDIENST"
+            },
+            zh: {
+                subtitle: "Oliver, 您的虚拟顾问",
+                online: "在线",
+                emailLabel: "您的邮箱",
+                emailError: "邮箱无效",
+                emailPlaceholder: "example@email.com",
+                placeholder: "描述您的问题...",
+                send: "发送",
+                btnDelivery: "运输损坏",
+                btnInstall: "安装损坏",
+                btnTracking: "订单追踪",
+                quickDelivery: "我的玻璃到货时已破损",
+                quickInstall: "我在安装时打碎了玻璃",
+                quickTracking: "我的订单在哪里?",
+                imageReady: "图片已准备",
+                welcome: "谢谢! 今天我能为您做什么?",
+                photoSent: "(照片已发送)",
+                photoMessage: "这是我的照片",
+                error: "连接错误。请联系 contactglassgroup@gmail.com",
+                header: "售后服务"
+            }
+        };
+
         let sessionId = null;
         let conversationHistory = [];
         let currentImageBase64 = null;
         let currentImageType = null;
+        let selectedLang = null;
+        let languageSelected = false;
 
         const messages = document.getElementById('messages');
         const input = document.getElementById('messageInput');
@@ -273,6 +439,42 @@
 
         function time() {
             return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function selectLanguage(lang) {
+            selectedLang = lang;
+            languageSelected = true;
+
+            // Update UI with selected language
+            const t = translations[lang];
+            document.getElementById('subtitleText').textContent = t.subtitle;
+            document.getElementById('onlineText').textContent = t.online;
+            document.getElementById('emailLabel').textContent = t.emailLabel;
+            document.getElementById('emailError').textContent = t.emailError;
+            emailInput.placeholder = t.emailPlaceholder;
+            input.placeholder = t.placeholder;
+            btn.textContent = t.send;
+            document.getElementById('btnDelivery').textContent = t.btnDelivery;
+            document.getElementById('btnInstall').textContent = t.btnInstall;
+            document.getElementById('btnTracking').textContent = t.btnTracking;
+            document.getElementById('imageReadyText').textContent = t.imageReady;
+
+            // Show quick actions
+            document.getElementById('quickActions').classList.remove('hidden');
+
+            // Hide language selector
+            document.getElementById('langSelector').innerHTML = '<span class="text-2xl">' + getFlagEmoji(lang) + '</span><span class="ml-2 font-bold text-brutal-red">Selected!</span>';
+
+            // Add welcome message in selected language
+            addMsg(t.welcome, false);
+
+            // Save language preference
+            localStorage.setItem('vitreflam_lang', lang);
+        }
+
+        function getFlagEmoji(lang) {
+            const flags = { fr: '🇫🇷', en: '🇬🇧', it: '🇮🇹', es: '🇪🇸', de: '🇩🇪', zh: '🇨🇳' };
+            return flags[lang] || '🌐';
         }
 
         function handleKey(e) {
@@ -297,7 +499,7 @@
             if (!file) return;
 
             if (file.size > 5 * 1024 * 1024) {
-                alert('Image trop grande (max 5MB)');
+                alert('Image too large (max 5MB)');
                 return;
             }
 
@@ -329,12 +531,12 @@
 
             const content = isUser ? escapeHtml(text) : parseMarkdown(text);
             const avatarBg = isUser ? 'bg-brutal-black' : 'bg-brutal-red';
-            const avatarText = isUser ? 'MOI' : 'O';
+            const avatarText = isUser ? 'ME' : 'O';
             const msgBg = isUser ? 'bg-brutal-red text-brutal-white' : 'bg-brutal-white';
 
             let imageHtml = '';
             if (imageUrl) {
-                imageHtml = `<img src="${imageUrl}" alt="Image jointe" class="mt-2 max-h-32 brutal-border">`;
+                imageHtml = `<img src="${imageUrl}" alt="Image" class="mt-2 max-h-32 brutal-border">`;
             }
 
             div.innerHTML = `
@@ -375,6 +577,12 @@
         }
 
         async function send() {
+            if (!languageSelected) {
+                alert('Please select your language first / Veuillez d\'abord selectionner votre langue');
+                return;
+            }
+
+            const t = translations[selectedLang];
             const msg = input.value.trim();
             const email = emailInput.value.trim();
             const url = webhook.value.trim();
@@ -389,10 +597,10 @@
             emailInput.classList.remove('ring-4', 'ring-brutal-red');
 
             if (!msg && !currentImageBase64) return;
-            if (!url) { setStatus('error', 'URL manquante'); return; }
+            if (!url) { setStatus('error', 'URL missing'); return; }
 
             // Display message with image if present
-            const displayMsg = msg || '(Photo envoyee)';
+            const displayMsg = msg || t.photoSent;
             const imageDataUrl = currentImageBase64 ? `data:${currentImageType};base64,${currentImageBase64}` : null;
             addMsg(displayMsg, true, imageDataUrl);
 
@@ -404,9 +612,10 @@
             try {
                 const payload = {
                     email,
-                    message: msg || 'Voici ma photo',
+                    message: msg || t.photoMessage,
                     session_id: sessionId,
-                    conversation_history: conversationHistory
+                    conversation_history: conversationHistory,
+                    language: selectedLang
                 };
 
                 // Add image if present
@@ -421,31 +630,36 @@
                     body: JSON.stringify(payload)
                 });
 
-                if (!res.ok) throw new Error(`Erreur ${res.status}`);
+                if (!res.ok) throw new Error(`Error ${res.status}`);
 
                 const data = await res.json();
                 if (data.session_id) sessionId = data.session_id;
 
                 typing.classList.add('hidden');
-                addMsg(data.response || 'Reponse recue', false);
-                setStatus('connected', 'Connecte');
+                addMsg(data.response || 'Response received', false);
+                setStatus('connected', 'Connected');
 
                 // Clear image after send
                 removeImage();
 
             } catch (err) {
                 typing.classList.add('hidden');
-                addMsg('Erreur de connexion. Contactez contactglassgroup@gmail.com', false);
+                addMsg(t.error, false);
                 setStatus('error', err.message);
             }
 
             btn.disabled = false;
         }
 
-        // Restore email
+        // Restore email and language
         const savedEmail = localStorage.getItem('vitreflam_email');
         if (savedEmail) emailInput.value = savedEmail;
         emailInput.addEventListener('change', () => localStorage.setItem('vitreflam_email', emailInput.value));
+
+        const savedLang = localStorage.getItem('vitreflam_lang');
+        if (savedLang && translations[savedLang]) {
+            // Auto-select saved language but still show selector for new session
+        }
     </script>
 
 </body>

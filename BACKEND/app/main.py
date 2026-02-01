@@ -136,6 +136,18 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = None
     image_base64: Optional[str] = None
     image_type: Optional[str] = None
+    language: Optional[str] = "fr"
+
+
+# Instructions de langue pour le chatbot
+LANGUAGE_INSTRUCTIONS = {
+    "fr": "IMPORTANT: Tu dois repondre en FRANCAIS.",
+    "en": "IMPORTANT: You MUST respond in ENGLISH.",
+    "it": "IMPORTANTE: Devi rispondere in ITALIANO.",
+    "es": "IMPORTANTE: Debes responder en ESPANOL.",
+    "de": "WICHTIG: Du musst auf DEUTSCH antworten.",
+    "zh": "重要：你必须用中文回复。"
+}
 
 
 class ChatResponse(BaseModel):
@@ -906,7 +918,7 @@ def analyze_image_with_claude(image_base64: str, image_type: str, user_message: 
         return {"error": str(e)}
 
 
-def generate_response_with_image_context(user_message: str, image_analysis: dict, full_context: str) -> str:
+def generate_response_with_image_context(user_message: str, image_analysis: dict, full_context: str, language: str = "fr") -> str:
     """Genere une reponse en tenant compte de l'analyse d'image"""
 
     verdict = image_analysis.get("verdict", "INCONNU")
@@ -948,7 +960,8 @@ def generate_response_with_image_context(user_message: str, image_analysis: dict
 - Demande au client de renvoyer une photo claire
 """
 
-    full_system = SYSTEM_PROMPT + full_context + image_context
+    lang_instruction = LANGUAGE_INSTRUCTIONS.get(language, LANGUAGE_INSTRUCTIONS["fr"])
+    full_system = f"{lang_instruction}\n\n{SYSTEM_PROMPT}{full_context}{image_context}"
 
     try:
         response = claude.messages.create(
@@ -1117,11 +1130,13 @@ async def chat(request: ChatRequest):
         assistant_response = generate_response_with_image_context(
             request.message,
             image_analysis,
-            full_context
+            full_context,
+            request.language
         )
     else:
         # Reponse normale sans image
-        full_system = SYSTEM_PROMPT + full_context
+        lang_instruction = LANGUAGE_INSTRUCTIONS.get(request.language, LANGUAGE_INSTRUCTIONS["fr"])
+        full_system = f"{lang_instruction}\n\n{SYSTEM_PROMPT}{full_context}"
 
         # Charger l'historique de la conversation en cours
         history = await get_conversation_history(conversation_id)

@@ -21,8 +21,7 @@ def main():
         sys.executable, "-m", "uvicorn",
         "app.main:app",
         "--host", "0.0.0.0",
-        "--port", "8000",
-        "--reload"
+        "--port", os.environ.get("PORT", "8000")
     ])
 
 if __name__ == "__main__":

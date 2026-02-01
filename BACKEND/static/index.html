@@ -563,9 +563,15 @@
         }
 
         function parseMarkdown(text) {
+            // Convertir les URLs en liens cliquables
+            text = text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" class="text-brutal-red underline font-bold hover:text-brutal-red-dark">$1</a>');
+            // Markdown bold
             text = text.replace(/\*\*(.+?)\*\*/g, '<strong class="text-brutal-red font-black">$1</strong>');
+            // Markdown italic
             text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            // Line breaks
             text = text.replace(/\n/g, '<br>');
+            // Bullet points
             text = text.replace(/^- (.+)/gm, '<span class="block ml-2">&#8226; $1</span>');
             return text;
         }

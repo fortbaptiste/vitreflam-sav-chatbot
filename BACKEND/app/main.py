@@ -919,50 +919,69 @@ def analyze_image_with_claude(image_base64: str, image_type: str, user_message: 
         return {"error": str(e)}
 
 
-def generate_response_with_image_context(user_message: str, image_analysis: dict, full_context: str, language: str = "fr") -> str:
+def generate_response_with_image_context(user_message: str, image_analysis: dict, full_context: str, language: str = "fr", history_count: int = 0) -> str:
     """Genere une reponse en tenant compte de l'analyse d'image"""
 
     verdict = image_analysis.get("verdict", "INCONNU")
     confidence = image_analysis.get("confidence", 0)
     analysis = image_analysis.get("analysis", "")
     is_valid = image_analysis.get("is_valid_claim", False)
+    has_error = "error" in image_analysis
 
-    image_context = f"""
+    # Construire le contexte d'image
+    if has_error:
+        error_msg = image_analysis.get("error", "Erreur inconnue")
+        logger.error(f"Erreur analyse image: {error_msg}")
+        image_context = """
+
+## PROBLEME TECHNIQUE AVEC LA PHOTO:
+- L'image n'a pas pu etre analysee (erreur technique)
+- Dis au client que tu as bien recu sa photo mais qu'il y a eu un probleme technique
+- Demande-lui de renvoyer la photo ou de contacter contactglassgroup@gmail.com
+"""
+    else:
+        image_context = f"""
 
 ## ANALYSE DE LA PHOTO ENVOYEE:
 - **Verdict**: {verdict}
 - **Confiance**: {confidence}%
 - **Details**: {analysis[:500]}
+- IMPORTANT: Tu as BIEN VU et ANALYSE l'image du client. Ne dis JAMAIS que tu n'as pas pu voir l'image.
 
-## INSTRUCTIONS:
+## INSTRUCTIONS SELON VERDICT:
 """
-
-    if verdict == "CASSE_CONFIRMEE" and is_valid:
-        image_context += """
+        if verdict == "CASSE_CONFIRMEE" and is_valid:
+            image_context += """
 - La casse est CONFIRMEE visuellement
 - Procede avec la procedure de remplacement SI assurance et delais respectes
 - Demande date de livraison et confirmation assurance avant de promettre un remplacement
 """
-    elif verdict == "CASSE_NON_CONFIRMEE":
-        image_context += """
-- La photo NE MONTRE PAS de casse evidente
-- Sois poli mais ferme: explique que tu ne vois pas de dommage
-- Demande une nouvelle photo plus claire
-- Ne propose PAS de remplacement
+        elif verdict == "CASSE_NON_CONFIRMEE":
+            image_context += """
+- La photo NE MONTRE PAS de casse evidente sur un produit Vitreflam
+- Sois poli mais ferme: explique ce que tu vois (peut-etre pas un produit Vitreflam?)
+- Demande une nouvelle photo plus claire si necessaire
 """
-    elif verdict == "PHOTO_INSUFFISANTE":
-        image_context += """
-- La photo n'est pas suffisante
+        elif verdict == "PHOTO_INSUFFISANTE":
+            image_context += """
+- La photo n'est pas suffisante pour analyser
 - Demande une nouvelle photo: bien eclairee, nette, montrant le verre et les dommages
 """
-    else:
-        image_context += """
-- Probleme avec l'analyse
-- Demande au client de renvoyer une photo claire
+        else:
+            image_context += """
+- Analyse non concluante
+- Demande au client de renvoyer une photo plus claire du verre ceramique
 """
 
+    # Instruction de langue
     lang_instruction = LANGUAGE_INSTRUCTIONS.get(language, LANGUAGE_INSTRUCTIONS["fr"])
-    full_system = f"{lang_instruction}\n\n{SYSTEM_PROMPT}{full_context}{image_context}"
+
+    # Ne pas saluer si conversation deja en cours
+    no_greeting = ""
+    if history_count > 0:
+        no_greeting = "\n\n## INSTRUCTION CRITIQUE:\nLa conversation a DEJA COMMENCE. NE DIS PAS 'Bonjour', 'Hello', ou toute salutation. Reponds DIRECTEMENT."
+
+    full_system = f"{lang_instruction}\n\n{SYSTEM_PROMPT}{full_context}{image_context}{no_greeting}"
 
     try:
         response = claude.messages.create(
@@ -1105,7 +1124,11 @@ async def chat(request: ChatRequest):
     if needs_escalation:
         full_context += "\n- ESCALADE NECESSAIRE: Propose au client de le mettre en contact avec un responsable par email a contactglassgroup@gmail.com"
 
-    # 5. Traiter selon presence d'image ou non
+    # 5. Charger l'historique pour savoir si on a deja salue
+    history = await get_conversation_history(conversation_id)
+    history_count = len(history)
+
+    # 6. Traiter selon presence d'image ou non
     image_analysis = None
     if has_image:
         logger.info("Analyse de l'image...")
@@ -1127,23 +1150,23 @@ async def chat(request: ChatRequest):
                     request.message,
                     image_analysis
                 )
+        else:
+            logger.error(f"Erreur analyse image: {image_analysis.get('error')}")
 
         assistant_response = generate_response_with_image_context(
             request.message,
             image_analysis,
             full_context,
-            request.language
+            request.language,
+            history_count
         )
     else:
         # Reponse normale sans image
         lang_instruction = LANGUAGE_INSTRUCTIONS.get(request.language, LANGUAGE_INSTRUCTIONS["fr"])
 
-        # Charger l'historique de la conversation en cours
-        history = await get_conversation_history(conversation_id)
-
         # Ajouter instruction explicite pour ne pas resaluer si conversation deja commencee
         no_greeting = ""
-        if len(history) > 0:
+        if history_count > 0:
             no_greeting = "\n\n## INSTRUCTION CRITIQUE:\nLa conversation a DEJA COMMENCE. Tu as DEJA salue ce client. NE DIS PAS 'Bonjour', 'Hello', ou toute autre salutation. Reponds DIRECTEMENT a la question sans formule de politesse initiale."
 
         full_system = f"{lang_instruction}\n\n{SYSTEM_PROMPT}{full_context}{no_greeting}"

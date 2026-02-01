@@ -1137,10 +1137,17 @@ async def chat(request: ChatRequest):
     else:
         # Reponse normale sans image
         lang_instruction = LANGUAGE_INSTRUCTIONS.get(request.language, LANGUAGE_INSTRUCTIONS["fr"])
-        full_system = f"{lang_instruction}\n\n{SYSTEM_PROMPT}{full_context}"
 
         # Charger l'historique de la conversation en cours
         history = await get_conversation_history(conversation_id)
+
+        # Ajouter instruction explicite pour ne pas resaluer si conversation deja commencee
+        no_greeting = ""
+        if len(history) > 0:
+            no_greeting = "\n\n## INSTRUCTION CRITIQUE:\nLa conversation a DEJA COMMENCE. Tu as DEJA salue ce client. NE DIS PAS 'Bonjour', 'Hello', ou toute autre salutation. Reponds DIRECTEMENT a la question sans formule de politesse initiale."
+
+        full_system = f"{lang_instruction}\n\n{SYSTEM_PROMPT}{full_context}{no_greeting}"
+
         history.append({"role": "user", "content": request.message})
 
         try:

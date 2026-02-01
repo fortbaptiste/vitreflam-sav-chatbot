@@ -1,0 +1,16 @@
+# =====================================================
+# VITREFLAM - Dependances Python
+# pip install -r requirements.txt
+# =====================================================
+
+# Supabase client
+supabase>=2.0.0
+
+# OpenAI pour les embeddings
+openai>=1.0.0
+
+# Gestion des variables d'environnement
+python-dotenv>=1.0.0
+
+# Utilitaires
+tqdm>=4.65.0

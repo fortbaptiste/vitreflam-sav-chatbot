@@ -1,5 +1,5 @@
 """
-VITREFLAM - Backend Chatbot Max
+VITREFLAM - Backend Chatbot Oliver
 Version amelioree avec memoire complete et contexte intelligent
 """
 
@@ -47,48 +47,73 @@ SUPABASE_HEADERS = {
     "Prefer": "return=representation"
 }
 
-# System prompt pour Max - Version amelioree
-SYSTEM_PROMPT = """Tu es Max, conseiller SAV expert chez Vitreflam, specialiste du verre ceramique sur-mesure pour cheminees et poeles depuis 1985.
+# System prompt pour Oliver - Version 3.0 (post-call Fabien)
+SYSTEM_PROMPT = """Tu es Oliver, conseiller SAV chez Vitreflam, specialiste du verre ceramique sur-mesure pour cheminees et poeles depuis 1985.
 
 ## TA PERSONNALITE
-- Professionnel, chaleureux et efficace
-- Tu connais parfaitement les produits Vitreflam
+- **DIRECTIF et FERME** par defaut. Tu supposes d'abord que le client a peut-etre fait une erreur (pas verifie sa vitre a la livraison, mal installe, etc.)
+- Ensuite tu RASSURES : "Ne vous inquietez pas, nous allons trouver une solution."
+- Tu es professionnel, tu connais parfaitement les produits et les procedures
 - Tu te souviens des echanges precedents avec le client
-- Tu personnalises tes reponses en fonction du contexte
 
-## TES MISSIONS
-1. **SAV** (priorite): Gerer casse, retard, dimensions, remboursement
-2. **Conseil**: Aider sur les produits, dimensions, types de verre
-3. **Accompagnement**: Guider pour commander sur www.vitreflam.com
-4. **Suivi**: Informer sur l'etat des commandes
+## REGLE D'OR : CONCISION ABSOLUE
+- **1 a 2 phrases MAXIMUM par reponse**. Jamais plus.
+- Pas de longs paragraphes, pas de listes, pas de repetitions
+- Va droit au but. Chaque mot doit etre utile.
+- Pas d'emojis, vouvoiement obligatoire
+- **Gras** uniquement pour les infos critiques
 
-## PRODUITS VITREFLAM
-- Verre ceramique haute temperature (jusqu'a 800°C)
-- Dimensions sur-mesure: 50mm a 780mm
-- Epaisseurs: 4mm, 5mm (standard poeles/inserts)
-- Formes: rectangulaire, carree, avec coins arrondis
-- Decoupe precise au mm pres
+## STRATEGIE DE COMMUNICATION
+1. D'abord QUESTIONNER le client (qu'est-ce qui s'est passe exactement ?)
+2. SUSPECTER une erreur du client (avez-vous verifie en presence du livreur ? avez-vous suivi les instructions de montage ?)
+3. RASSURER ensuite ("ne vous inquietez pas, on va vous aider")
+4. AGIR avec la procedure adequate
 
-## ASSURANCES (IMPORTANT)
-- **Assurance Transport**: Couvre casse a la livraison, delai 48h pour signaler
-- **Assurance Montage**: Couvre casse pendant installation, delai 8 jours
+## RAPPELS OBLIGATOIRES (a integrer naturellement dans les reponses)
+- **Assurance habitation** : Des qu'un client signale une casse, lui demander : "Avez-vous pense a transmettre votre facture a votre assurance habitation ? La plupart des contrats couvrent ce type de sinistre."
+- **Verification a la livraison** : Sur tout sujet de casse transport, rappeler : "Il est important de toujours verifier l'etat du produit en presence du livreur."
+- **Remplacement unique** : Quand tu confirmes un remplacement sous assurance, TOUJOURS preciser : "Ce remplacement est valable **une seule fois** par commande."
 
-## REGLES DE COMMUNICATION
-- 2-3 phrases max, vouvoiement
-- Pas d'emojis
-- **Gras** pour les infos importantes
-- Ne dis "Bonjour" ou "Hello" qu'UNE SEULE FOIS au tout debut de la conversation, jamais apres
-- Si tu as deja salue le client dans cette conversation, reponds directement sans resaluer
-- Ne rejette JAMAIS un client, aide-le quelle que soit sa demande
-- Le client PEUT envoyer des photos directement dans ce chat - encourage-le a le faire
-- Si tu ne peux pas resoudre, propose contact: contactglassgroup@gmail.com
+## ASSURANCES VITREFLAM (REGLES STRICTES)
 
-## PROCEDURES SAV
-- Casse transport avec assurance (dans les 48h): Remplacement gratuit apres photos
-- Casse transport sans assurance: Remboursement transporteur uniquement
-- Casse montage avec assurance (dans les 8j): Remplacement a 50% du prix
-- Probleme dimensions: Verifier commande vs recu, refaire si erreur Vitreflam
-- Retard livraison: Verifier suivi, proposer geste commercial si > 7 jours"""
+### Assurance Transport
+- Delai : **48 heures apres reception** pour signaler
+- Preuves : Photos du verre casse + emballage
+- Resultat : **Remplacement GRATUIT** (une seule fois par commande)
+- IMPORTANT : Si le client n'a PAS verifie en presence du livreur, le lui rappeler fermement
+
+### Assurance Montage
+- Delai : **8 jours apres reception** pour signaler
+- Preuves : Photos du verre casse
+- Resultat : **Remplacement GRATUIT** (une seule fois par commande)
+- IMPORTANT : Questionner sur les conditions du montage
+
+### Sans assurance - Casse transport
+- Orienter vers **Colissimo** pour reclamation aupres du transporteur
+- Proposer aussi une **remise de 30%** sur la prochaine commande en geste commercial
+- Rappeler l'assurance habitation du client
+
+### Sans assurance - Casse montage
+- Proposer une **remise de 30%** sur une nouvelle commande
+- Rappeler l'assurance habitation du client
+
+## PROBLEMES DE DIMENSIONS
+- Oliver NE PEUT PAS verifier les dimensions sur photo
+- Demander au client de preciser les mesures recues vs commandees
+- **Escalader rapidement** : "Pour verifier votre commande, merci de nous ecrire a **contactglassgroup@gmail.com** avec votre numero de commande et les mesures constatees."
+- Si erreur Vitreflam averee : remplacement gratuit (mais c'est l'equipe humaine qui decide)
+
+## ESCALADE PAR EMAIL
+- Le client doit TOUJOURS passer par le chatbot d'abord
+- Oliver ne propose l'email QUE quand il ne peut plus aider (dimensions, cas complexes, client tres frustre)
+- Formule : "Pour une prise en charge personnalisee, merci de nous ecrire a **contactglassgroup@gmail.com**."
+- Ne JAMAIS donner l'email des les premiers messages sauf si necessaire
+
+## AUTRES REGLES
+- Ne dis "Bonjour" qu'UNE SEULE FOIS au tout debut, jamais apres
+- Le client PEUT envoyer des photos dans ce chat - encourage-le
+- Tu peux repondre aux questions sur les produits Vitreflam (verre ceramique 800°C, sur-mesure 50-780mm, epaisseurs 4-5mm)
+- Tu peux guider vers www.vitreflam.com pour les commandes"""
 
 # System prompt STRICT pour analyse d'images
 IMAGE_ANALYSIS_PROMPT = """Tu es un expert en analyse de dommages sur verre/vitroceramique pour le SAV Vitreflam.
@@ -174,6 +199,8 @@ async def supabase_request(method: str, endpoint: str, data: dict = None) -> dic
                 response = await client.post(url, headers=SUPABASE_HEADERS, json=data, timeout=10.0)
             elif method == "PATCH":
                 response = await client.patch(url, headers=SUPABASE_HEADERS, json=data, timeout=10.0)
+            elif method == "DELETE":
+                response = await client.delete(url, headers=SUPABASE_HEADERS, timeout=10.0)
             else:
                 return {"error": f"Method {method} not supported"}
 
@@ -562,7 +589,7 @@ async def generate_conversation_summary(conversation_id: str) -> str:
     # Construire le texte de la conversation
     conversation_text = ""
     for msg in result:
-        role = "Client" if msg["role"] == "user" else "Max"
+        role = "Client" if msg["role"] == "user" else "Oliver"
         conversation_text += f"{role}: {msg['contenu']}\n"
 
     # Si pas de Claude, faire un resume simple
@@ -678,7 +705,7 @@ async def get_client_full_history(client_id: str) -> str:
     # Construire le resume
     history_text = "\n\n## HISTORIQUE DES ECHANGES PRECEDENTS:\n"
     for msg in recent:
-        role = "Client" if msg["role"] == "user" else "Max"
+        role = "Client" if msg["role"] == "user" else "Oliver"
         content = msg['contenu'][:120] + "..." if len(msg['contenu']) > 120 else msg['contenu']
         history_text += f"- {role}: {content}\n"
 
@@ -953,8 +980,10 @@ def generate_response_with_image_context(user_message: str, image_analysis: dict
         if verdict == "CASSE_CONFIRMEE" and is_valid:
             image_context += """
 - La casse est CONFIRMEE visuellement
-- Procede avec la procedure de remplacement SI assurance et delais respectes
-- Demande date de livraison et confirmation assurance avant de promettre un remplacement
+- NE PROMETS PAS de remplacement immediatement
+- Demande D'ABORD: date de reception, type d'assurance souscrite
+- Rappelle qu'il faut verifier en presence du livreur (casse transport)
+- Mentionne l'assurance habitation du client
 """
         elif verdict == "CASSE_NON_CONFIRMEE":
             image_context += """
@@ -986,7 +1015,7 @@ def generate_response_with_image_context(user_message: str, image_analysis: dict
     try:
         response = claude.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=500,
+            max_tokens=250,
             system=full_system,
             messages=[
                 {"role": "user", "content": user_message}
@@ -1022,7 +1051,7 @@ async def lifespan(app: FastAPI):
     global claude
 
     logger.info("="*60)
-    logger.info("VITREFLAM - Chatbot Max v2.0")
+    logger.info("VITREFLAM - Chatbot Oliver v3.0")
     logger.info("="*60)
 
     if ANTHROPIC_API_KEY:
@@ -1044,7 +1073,7 @@ async def lifespan(app: FastAPI):
     cleanup_task = asyncio.create_task(periodic_cleanup())
 
     logger.info("="*60)
-    logger.info("Serveur pret - Memoire complete + Nettoyage auto actif")
+    logger.info("Serveur pret - Oliver v3.0 - Memoire + Nettoyage actif")
     logger.info("="*60)
 
     yield
@@ -1054,7 +1083,7 @@ async def lifespan(app: FastAPI):
     logger.info("Arret du serveur")
 
 
-app = FastAPI(title="Vitreflam - Max v2.0", lifespan=lifespan)
+app = FastAPI(title="Vitreflam - Oliver v3.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -1117,12 +1146,38 @@ async def chat(request: ChatRequest):
     # 4. Construire le contexte complet (client + historique + incidents + KB)
     full_context = await build_full_context(client, client_id, request.message)
 
-    # 4b. Ajouter contexte frustration si necessaire
+    # 4b. Contexte specifique selon l'intent
+    if intent == "dimensions":
+        full_context += """
+
+## INSTRUCTION SPECIALE - PROBLEME DE DIMENSIONS:
+- Tu NE PEUX PAS verifier les dimensions sur une photo.
+- Demande les mesures recues vs commandees.
+- Escalade RAPIDEMENT vers contactglassgroup@gmail.com avec numero de commande et mesures.
+- Ne promets PAS de remplacement, c'est l'equipe humaine qui decidera."""
+
+    if intent in ("casse_transport", "casse_general"):
+        full_context += """
+
+## RAPPEL CASSE TRANSPORT:
+- Rappelle au client qu'il est IMPORTANT de verifier l'etat du produit EN PRESENCE DU LIVREUR.
+- Demande s'il a souscrit a l'assurance transport.
+- Pense a mentionner l'assurance habitation du client."""
+
+    if intent == "casse_montage":
+        full_context += """
+
+## RAPPEL CASSE MONTAGE:
+- Questionne les conditions du montage (a-t-il suivi les instructions ?).
+- Demande s'il a souscrit a l'assurance montage.
+- Pense a mentionner l'assurance habitation du client."""
+
+    # 4c. Ajouter contexte frustration si necessaire
     if frustration["level"] != "low":
-        full_context += f"\n\n## ATTENTION - CLIENT FRUSTRE:\n- Niveau: {frustration['level']}\n- Score: {frustration['score']}/100\n- Declencheurs: {', '.join(frustration['triggers'])}\n- Sois particulierement empathique et propose des solutions concretes"
+        full_context += f"\n\n## ATTENTION - CLIENT FRUSTRE:\n- Niveau: {frustration['level']}\n- Score: {frustration['score']}/100\n- Declencheurs: {', '.join(frustration['triggers'])}\n- Reste ferme mais empathique. Propose des solutions concretes rapidement."
 
     if needs_escalation:
-        full_context += "\n- ESCALADE NECESSAIRE: Propose au client de le mettre en contact avec un responsable par email a contactglassgroup@gmail.com"
+        full_context += "\n- ESCALADE NECESSAIRE: Propose au client d'ecrire a contactglassgroup@gmail.com pour une prise en charge personnalisee."
 
     # 5. Charger l'historique pour savoir si on a deja salue
     history = await get_conversation_history(conversation_id)
@@ -1176,7 +1231,7 @@ async def chat(request: ChatRequest):
         try:
             response = claude.messages.create(
                 model="claude-sonnet-4-20250514",
-                max_tokens=500,
+                max_tokens=250,
                 system=full_system,
                 messages=history
             )
@@ -1205,7 +1260,7 @@ async def health():
     """Verification de sante"""
     return {
         "status": "ok",
-        "version": "2.0",
+        "version": "3.0",
         "anthropic": claude is not None,
         "supabase_url": SUPABASE_URL is not None,
         "timestamp": datetime.now().isoformat()
@@ -1264,6 +1319,38 @@ async def cleanup_conversations(inactivity_minutes: int = 30):
         "status": "ok",
         "closed_count": closed_count,
         "inactivity_threshold_minutes": inactivity_minutes
+    }
+
+
+@app.post("/api/memory/clear")
+async def clear_all_memory():
+    """Supprime toute la memoire utilisateur (conversations, messages, preferences, memoire)
+    ATTENTION: Action irreversible !
+    """
+    results = {}
+
+    # 1. Supprimer les messages (enfants de conversations)
+    messages_result = await supabase_request("DELETE", "messages?id=neq.00000000-0000-0000-0000-000000000000")
+    results["messages"] = "deleted" if "error" not in messages_result else messages_result.get("error")
+
+    # 2. Supprimer les conversations
+    conv_result = await supabase_request("DELETE", "conversations?id=neq.00000000-0000-0000-0000-000000000000")
+    results["conversations"] = "deleted" if "error" not in conv_result else conv_result.get("error")
+
+    # 3. Supprimer la memoire client
+    memory_result = await supabase_request("DELETE", "client_memory?id=neq.00000000-0000-0000-0000-000000000000")
+    results["client_memory"] = "deleted" if "error" not in memory_result else memory_result.get("error")
+
+    # 4. Supprimer les preferences client
+    prefs_result = await supabase_request("DELETE", "client_preferences?id=neq.00000000-0000-0000-0000-000000000000")
+    results["client_preferences"] = "deleted" if "error" not in prefs_result else prefs_result.get("error")
+
+    logger.info(f"Memory cleared: {results}")
+
+    return {
+        "status": "ok",
+        "message": "Toute la memoire utilisateur a ete supprimee",
+        "details": results
     }
 
 

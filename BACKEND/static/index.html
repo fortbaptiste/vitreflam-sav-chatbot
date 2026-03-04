@@ -89,7 +89,7 @@
                             <button onclick="selectLanguage('en')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="English">🇬🇧</button>
                             <button onclick="selectLanguage('nl')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="Nederlands">🇳🇱</button>
                             <button onclick="selectLanguage('es')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="Espanol">🇪🇸</button>
-                            <button onclick="selectLanguage('other')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="Others">🌍</button>
+                            <button onclick="selectLanguage('other')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="Others" style="font-size:1.5rem;line-height:1;filter:grayscale(1);">🌐</button>
                         </div>
                     </div>
                     <div class="text-[10px] text-gray-400 mt-1 ml-1" id="welcomeTime"></div>
@@ -317,7 +317,7 @@
             input.placeholder = t.placeholder;
             document.getElementById('imageReadyText').textContent = t.imageReady;
 
-            const flags = { fr: '🇫🇷', de: '🇩🇪', en: '🇬🇧', nl: '🇳🇱', es: '🇪🇸', other: '🌍' };
+            const flags = { fr: '🇫🇷', de: '🇩🇪', en: '🇬🇧', nl: '🇳🇱', es: '🇪🇸', other: '🌐' };
             document.getElementById('langSelector').innerHTML =
                 '<span class="text-xl">' + flags[lang] + '</span>' +
                 '<span class="ml-2 text-sm text-green-600 font-medium">&#10003;</span>';

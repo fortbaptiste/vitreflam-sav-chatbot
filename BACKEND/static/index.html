@@ -34,11 +34,19 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        /* Iframe mode: remove background, fill container */
+        @media (max-height: 700px), (max-width: 500px) {
+            body.iframe-body { background: white; padding: 0; min-height: 100vh; }
+            .iframe-container { max-width: 100%; height: 100vh !important; border-radius: 0; box-shadow: none; }
+        }
+        /* When loaded in iframe, always fill */
+        body.in-iframe { background: white !important; padding: 0 !important; min-height: 100vh !important; }
+        body.in-iframe .iframe-container { max-width: 100% !important; height: 100vh !important; border-radius: 0 !important; box-shadow: none !important; }
     </style>
 </head>
-<body class="font-sans bg-gray-100 min-h-screen flex items-center justify-center p-4">
+<body class="font-sans bg-gray-100 min-h-screen flex items-center justify-center p-4 iframe-body">
 
-    <div class="w-full max-w-lg flex flex-col h-[600px] bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div class="w-full max-w-lg flex flex-col h-[600px] bg-white rounded-2xl shadow-lg overflow-hidden iframe-container">
 
         <!-- Header -->
         <div class="bg-white px-5 py-4 border-b border-gray-200 flex items-center gap-3">
@@ -77,11 +85,11 @@
                         <p class="text-xs text-gray-500 mb-3">Please select your language:</p>
                         <div id="langSelector" class="flex flex-wrap gap-2 justify-center">
                             <button onclick="selectLanguage('fr')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="Francais">🇫🇷</button>
-                            <button onclick="selectLanguage('en')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="English">🇬🇧</button>
-                            <button onclick="selectLanguage('it')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="Italiano">🇮🇹</button>
-                            <button onclick="selectLanguage('es')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="Espanol">🇪🇸</button>
                             <button onclick="selectLanguage('de')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="Deutsch">🇩🇪</button>
-                            <button onclick="selectLanguage('zh')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="Chinese">🇨🇳</button>
+                            <button onclick="selectLanguage('en')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="English">🇬🇧</button>
+                            <button onclick="selectLanguage('nl')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="Nederlands">🇳🇱</button>
+                            <button onclick="selectLanguage('es')" class="lang-btn text-2xl hover:scale-110 transition-transform p-1.5 rounded-lg hover:bg-gray-100" title="Espanol">🇪🇸</button>
+                            <button onclick="selectLanguage('other')" class="lang-btn text-xs hover:scale-105 transition-transform px-2.5 py-1.5 rounded-lg hover:bg-gray-100 text-gray-500 border border-gray-300" title="Other language">Autres</button>
                         </div>
                     </div>
                     <div class="text-[10px] text-gray-400 mt-1 ml-1" id="welcomeTime"></div>
@@ -142,6 +150,27 @@
 
     <!-- Hidden API config -->
     <input type="hidden" id="webhookUrl" value="/api/chat">
+
+    <script>
+        // Detect if loaded inside an iframe and adapt
+        (function() {
+            try {
+                if (window.self !== window.top) {
+                    document.body.classList.add('in-iframe');
+                }
+            } catch(e) {
+                document.body.classList.add('in-iframe');
+            }
+            // If loaded cross-origin (iframe from PrestaShop), use absolute API URL
+            var webhookEl = document.getElementById('webhookUrl');
+            if (webhookEl && webhookEl.value === '/api/chat') {
+                var origin = window.location.origin;
+                if (origin && origin !== 'null') {
+                    webhookEl.value = origin + '/api/chat';
+                }
+            }
+        })();
+    </script>
 
     <script>
         const translations = {
@@ -215,19 +244,33 @@
                 error: "Verbindungsfehler. Kontaktieren Sie contactglassgroup@gmail.com",
                 header: "KUNDENDIENST"
             },
-            zh: {
-                subtitle: "Oliver, 您的虚拟顾问",
-                online: "在线",
-                emailLabel: "您的邮箱",
-                emailError: "邮箱无效",
+            other: {
+                subtitle: "Oliver, your virtual advisor",
+                online: "Online",
+                emailLabel: "YOUR EMAIL",
+                emailError: "Invalid email",
                 emailPlaceholder: "example@email.com",
-                placeholder: "输入消息...",
-                imageReady: "图片已准备",
-                welcome: "谢谢! 今天我能为您做什么?",
-                photoSent: "(照片已发送)",
-                photoMessage: "这是我的照片",
-                error: "连接错误。请联系 contactglassgroup@gmail.com",
-                header: "售后服务"
+                placeholder: "Write a message...",
+                imageReady: "Image ready",
+                welcome: "No problem! Write to me in your language and I will adapt. How can I help you today?",
+                photoSent: "(Photo sent)",
+                photoMessage: "Here is my photo",
+                error: "Connection error. Contact contactglassgroup@gmail.com",
+                header: "AFTER-SALES SERVICE"
+            },
+            nl: {
+                subtitle: "Oliver, uw virtuele adviseur",
+                online: "Online",
+                emailLabel: "UW EMAIL",
+                emailError: "Ongeldig e-mailadres",
+                emailPlaceholder: "voorbeeld@email.com",
+                placeholder: "Schrijf een bericht...",
+                imageReady: "Afbeelding klaar",
+                welcome: "Bedankt! Hoe kan ik u vandaag helpen?",
+                photoSent: "(Foto verzonden)",
+                photoMessage: "Hier is mijn foto",
+                error: "Verbindingsfout. Neem contact op met contactglassgroup@gmail.com",
+                header: "KLANTENSERVICE"
             }
         };
 
@@ -274,7 +317,7 @@
             input.placeholder = t.placeholder;
             document.getElementById('imageReadyText').textContent = t.imageReady;
 
-            const flags = { fr: '🇫🇷', en: '🇬🇧', it: '🇮🇹', es: '🇪🇸', de: '🇩🇪', zh: '🇨🇳' };
+            const flags = { fr: '🇫🇷', de: '🇩🇪', en: '🇬🇧', nl: '🇳🇱', es: '🇪🇸', other: '🌍' };
             document.getElementById('langSelector').innerHTML =
                 '<span class="text-xl">' + flags[lang] + '</span>' +
                 '<span class="ml-2 text-sm text-green-600 font-medium">&#10003;</span>';

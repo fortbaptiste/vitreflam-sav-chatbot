@@ -118,8 +118,14 @@ SYSTEM_PROMPT = """Tu es Oliver, conseiller SAV chez Vitreflam, specialiste du v
 - Inclus TOUJOURS le lien de suivi pour que le client puisse verifier lui-meme.
 - Si tu n'as pas le numero de suivi, demande-le au client (format 13 caracteres, commence par 6A, 6C, 8R, etc.).
 
+## MULTILINGUISME
+- Tu parles couramment : francais, allemand, anglais, neerlandais, espagnol, italien, suedois, norvegien, portugais, danois, finnois, polonais.
+- QUELLE QUE SOIT la langue, tu appliques EXACTEMENT les memes regles SAV, la meme logique, les memes procedures (assurances, delais, escalade email, etc.).
+- Adapte les formules de politesse a la culture du pays (vouvoiement en francais, Siezen en allemand, usted en espagnol, etc.).
+- Les liens (vitreflam.com, contactglassgroup@gmail.com) restent identiques dans toutes les langues.
+
 ## AUTRES REGLES
-- Ne dis "Bonjour" qu'UNE SEULE FOIS au tout debut, jamais apres
+- Ne dis "Bonjour" (ou equivalent dans la langue) qu'UNE SEULE FOIS au tout debut, jamais apres
 - Le client PEUT envoyer des photos dans ce chat - encourage-le
 - Tu peux repondre aux questions sur les produits Vitreflam (verre ceramique 800°C, sur-mesure 50-780mm, epaisseurs 4-5mm)
 - Tu peux guider vers www.vitreflam.com pour les commandes"""
@@ -176,12 +182,19 @@ class ChatRequest(BaseModel):
 
 # Instructions de langue pour le chatbot
 LANGUAGE_INSTRUCTIONS = {
-    "fr": "IMPORTANT: Tu dois repondre en FRANCAIS.",
-    "en": "IMPORTANT: You MUST respond in ENGLISH.",
-    "it": "IMPORTANTE: Devi rispondere in ITALIANO.",
-    "es": "IMPORTANTE: Debes responder en ESPANOL.",
-    "de": "WICHTIG: Du musst auf DEUTSCH antworten.",
-    "zh": "重要：你必须用中文回复。"
+    "fr": "IMPORTANT: Tu dois repondre en FRANCAIS. Vouvoiement obligatoire.",
+    "en": "IMPORTANT: You MUST respond in ENGLISH. Use formal/polite tone.",
+    "de": "WICHTIG: Du musst auf DEUTSCH antworten. Siezen Sie den Kunden.",
+    "nl": "BELANGRIJK: Je MOET in het NEDERLANDS antwoorden. Gebruik de beleefde u-vorm.",
+    "es": "IMPORTANTE: Debes responder en ESPANOL. Usa el usted formal.",
+    "it": "IMPORTANTE: Devi rispondere in ITALIANO. Usa il Lei formale.",
+    "sv": "VIKTIGT: Du MASTE svara pa SVENSKA. Anvand formellt tilltalsatt (ni).",
+    "no": "VIKTIG: Du MA svare pa NORSK. Bruk formell tiltale (De).",
+    "pt": "IMPORTANTE: Deves responder em PORTUGUES. Usa o tratamento formal (o senhor/a senhora).",
+    "da": "VIGTIGT: Du SKAL svare pa DANSK. Brug formel tiltale (De).",
+    "fi": "TARKEAA: Sinun TAYTYY vastata SUOMEKSI. Kayta teitittelya.",
+    "pl": "WAZNE: MUSISZ odpowiadac po POLSKU. Uzywaj formy Pan/Pani.",
+    "other": "IMPORTANT: The client speaks a language not listed above. Detect the language they write in and RESPOND IN THAT SAME LANGUAGE perfectly. Use the formal/polite register of that language. Apply the exact same SAV logic, procedures, and rules as in French."
 }
 
 
@@ -919,7 +932,7 @@ def format_tracking_context(result: dict, numbers: list) -> str:
     if not result["shipments"]:
         return ""
 
-    parts = ["\n## DONNEES DE SUIVI COLIS EN TEMPS REEL:"]
+    parts = ["\n## DONNEES DE SUIVI COLIS EN TEMPS REEL (source: API Colissimo, donnees fiables):"]
 
     step_names = {
         0: "Annonce", 1: "Prise en charge", 2: "Acheminement",
@@ -995,7 +1008,12 @@ def format_tracking_context(result: dict, numbers: list) -> str:
 
         parts.append(f"Lien suivi : https://www.laposte.fr/outils/suivre-vos-envois?code={number}")
 
-    parts.append("\nINSTRUCTION: Presente ces informations de facon claire et naturelle au client. Inclus toujours le lien de suivi. Rassure le client sur le bon acheminement si tout se passe normalement.")
+    parts.append("\n## INSTRUCTIONS STRICTES SUIVI COLIS:")
+    parts.append("- UTILISE UNIQUEMENT les donnees ci-dessus. N'INVENTE JAMAIS de dates, statuts ou evenements.")
+    parts.append("- Si les donnees montrent etape 0 (Annonce), dis que le colis est en preparation, PAS en livraison.")
+    parts.append("- Cite les dates et evenements EXACTEMENT comme fournis ci-dessus.")
+    parts.append("- Inclus TOUJOURS le lien de suivi.")
+    parts.append("- Si le statut est 'Annonce/Preparation', rassure le client que le colis sera bientot pris en charge par Colissimo.")
 
     return "\n".join(parts)
 
@@ -1419,9 +1437,11 @@ async def chat(request: ChatRequest):
         history.append({"role": "user", "content": request.message})
 
         try:
+            # Plus de tokens pour les reponses suivi colis (liens + donnees)
+            tokens = 400 if tracking_context else 250
             response = claude.messages.create(
                 model="claude-sonnet-4-20250514",
-                max_tokens=250,
+                max_tokens=tokens,
                 system=full_system,
                 messages=history
             )

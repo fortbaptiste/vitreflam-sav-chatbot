@@ -40,13 +40,13 @@
             .iframe-container { max-width: 100%; height: 100vh !important; border-radius: 0; box-shadow: none; }
         }
         /* When loaded in iframe, always fill */
-        body.in-iframe { background: white !important; padding: 0 !important; min-height: 100vh !important; }
-        body.in-iframe .iframe-container { max-width: 100% !important; height: 100vh !important; border-radius: 0 !important; box-shadow: none !important; }
+        body.in-iframe { background: white !important; padding: 0 !important; margin: 0 !important; min-height: 100vh !important; overflow: hidden !important; }
+        body.in-iframe .iframe-container { max-width: 100% !important; height: 100vh !important; max-height: 100vh !important; border-radius: 0 !important; box-shadow: none !important; }
     </style>
 </head>
-<body class="font-sans bg-gray-100 min-h-screen flex items-center justify-center p-4 iframe-body">
+<body class="font-sans bg-gray-100 min-h-screen flex items-center justify-center p-0 iframe-body">
 
-    <div class="w-full max-w-lg flex flex-col h-[600px] bg-white rounded-2xl shadow-lg overflow-hidden iframe-container">
+    <div class="w-full max-w-lg flex flex-col h-[100vh] bg-white rounded-2xl shadow-lg overflow-hidden iframe-container">
 
         <!-- Header -->
         <div class="bg-white px-5 py-4 border-b border-gray-200 flex items-center gap-3">

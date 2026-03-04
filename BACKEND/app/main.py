@@ -7,8 +7,10 @@ import os
 import logging
 import uuid
 import re
+import base64
+from io import BytesIO
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, List
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
@@ -47,6 +49,251 @@ SUPABASE_HEADERS = {
     "Content-Type": "application/json",
     "Prefer": "return=representation"
 }
+
+# ============================================================
+# ANALYSE EXIF & AUTHENTICITE PHOTO
+# ============================================================
+
+def extract_exif_from_base64(base64_string: str) -> dict:
+    """Extrait les metadonnees EXIF d'une image base64 pour verification d'authenticite."""
+    from PIL import Image
+    from PIL.ExifTags import TAGS, GPSTAGS
+
+    # Nettoyer le prefix data URI si present
+    if "," in base64_string:
+        base64_string = base64_string.split(",", 1)[1]
+
+    try:
+        image_data = base64.b64decode(base64_string)
+        image = Image.open(BytesIO(image_data))
+    except Exception as e:
+        logger.error(f"Erreur ouverture image pour EXIF: {e}")
+        return {"has_exif": False, "format": "INCONNU", "size": (0, 0)}
+
+    result = {
+        "format": image.format or "INCONNU",
+        "size": image.size,
+        "has_exif": False,
+        "make": None,
+        "model": None,
+        "software": None,
+        "datetime_original": None,
+        "datetime_modified": None,
+        "has_gps": False,
+        "maker_note_present": False,
+        "exposure_time": None,
+        "f_number": None,
+        "iso": None,
+        "focal_length": None,
+    }
+
+    exif_data = image.getexif()
+    if not exif_data:
+        return result
+
+    result["has_exif"] = True
+
+    for tag_id, value in exif_data.items():
+        tag_name = TAGS.get(tag_id, tag_id)
+        if tag_name == "Make":
+            result["make"] = str(value)
+        elif tag_name == "Model":
+            result["model"] = str(value)
+        elif tag_name == "Software":
+            result["software"] = str(value)
+        elif tag_name == "DateTime":
+            result["datetime_modified"] = str(value)
+        elif tag_name == "MakerNote":
+            result["maker_note_present"] = True
+
+    # EXIF Sub-IFD (DateTimeOriginal, ISO, etc.)
+    try:
+        exif_ifd = exif_data.get_ifd(0x8769)
+        if exif_ifd:
+            for k, v in exif_ifd.items():
+                tag_name = TAGS.get(k, k)
+                if tag_name == "DateTimeOriginal":
+                    result["datetime_original"] = str(v)
+                elif tag_name == "DateTimeDigitized":
+                    if not result["datetime_original"]:
+                        result["datetime_original"] = str(v)
+                elif tag_name == "ExposureTime":
+                    result["exposure_time"] = v
+                elif tag_name == "FNumber":
+                    result["f_number"] = v
+                elif tag_name == "ISOSpeedRatings":
+                    result["iso"] = v
+                elif tag_name == "FocalLength":
+                    result["focal_length"] = v
+                elif tag_name == "MakerNote":
+                    result["maker_note_present"] = True
+    except Exception:
+        pass
+
+    # GPS Sub-IFD
+    try:
+        gps_ifd = exif_data.get_ifd(0x8825)
+        if gps_ifd:
+            result["has_gps"] = True
+    except Exception:
+        pass
+
+    return result
+
+
+def analyze_photo_authenticity(exif: dict) -> dict:
+    """Calcule un score d'authenticite de la photo basé sur les metadonnees EXIF."""
+    score = 0
+    max_score = 100
+    flags = []
+
+    # CHECK 1: Format (15 pts)
+    img_format = (exif.get("format") or "").upper()
+    if img_format == "JPEG":
+        score += 15
+    elif img_format == "PNG":
+        flags.append("FORMAT_PNG_SCREENSHOT")
+    elif img_format == "WEBP":
+        score += 5
+        flags.append("FORMAT_WEBP_WEB")
+    else:
+        flags.append(f"FORMAT_INHABITUEL_{img_format}")
+
+    # CHECK 2: EXIF presente (10 pts)
+    if exif.get("has_exif"):
+        score += 10
+    else:
+        flags.append("PAS_DE_EXIF")
+
+    # CHECK 3: Appareil photo (15 pts)
+    make = exif.get("make")
+    model = exif.get("model")
+    if make and model:
+        score += 15
+    elif make or model:
+        score += 8
+    else:
+        flags.append("PAS_APPAREIL_IDENTIFIE")
+
+    # CHECK 4: Date de prise (20 pts)
+    dt_original = exif.get("datetime_original")
+    if dt_original:
+        try:
+            dt = datetime.strptime(str(dt_original), "%Y:%m:%d %H:%M:%S")
+            age = datetime.now() - dt
+            if age < timedelta(hours=72):
+                score += 20
+            elif age < timedelta(days=30):
+                score += 10
+                flags.append("PHOTO_ANCIENNE")
+            else:
+                flags.append("PHOTO_TRES_ANCIENNE")
+        except (ValueError, TypeError):
+            score += 5
+    else:
+        flags.append("PAS_DE_DATE_PRISE")
+
+    # CHECK 5: Logiciel d'edition (10 pts)
+    software = exif.get("software")
+    if software:
+        editors = ["photoshop", "gimp", "lightroom", "paint", "canva", "picsart", "pixlr"]
+        if any(e in str(software).lower() for e in editors):
+            flags.append(f"LOGICIEL_EDITION_{software}")
+        else:
+            score += 10
+    else:
+        score += 7
+
+    # CHECK 6: MakerNote (10 pts) - très dur à falsifier
+    if exif.get("maker_note_present"):
+        score += 10
+    elif exif.get("has_exif"):
+        flags.append("PAS_DE_MAKERNOTE")
+
+    # CHECK 7: Parametres camera (10 pts)
+    camera_settings = ["exposure_time", "f_number", "iso", "focal_length"]
+    present = sum(1 for s in camera_settings if exif.get(s) is not None)
+    score += min(10, present * 3)
+    if present == 0 and exif.get("has_exif"):
+        flags.append("PAS_PARAMETRES_CAMERA")
+
+    # CHECK 8: GPS (10 pts)
+    if exif.get("has_gps"):
+        score += 10
+    else:
+        flags.append("PAS_DE_GPS")
+
+    # Normaliser le score
+    confidence = min(100, int((score / max_score) * 100))
+
+    # Determiner le niveau
+    if confidence >= 65:
+        level = "AUTHENTIQUE"
+    elif confidence >= 35:
+        level = "INDETERMINEE"
+    else:
+        level = "SUSPECTE"
+
+    return {
+        "score": confidence,
+        "level": level,
+        "flags": flags,
+        "device": f"{make or '?'} {model or '?'}".strip(),
+        "date_taken": exif.get("datetime_original"),
+    }
+
+
+async def store_photo_supabase(base64_string: str, client_id: str, incident_type: str) -> str:
+    """Stocke une photo dans Supabase Storage et retourne l'URL publique."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        logger.warning("Supabase non configure, photo non stockee")
+        return ""
+
+    # Nettoyer le prefix data URI
+    content_type = "image/jpeg"
+    ext = "jpg"
+    if base64_string.startswith("data:"):
+        header, base64_string = base64_string.split(",", 1)
+        if "image/png" in header:
+            content_type = "image/png"
+            ext = "png"
+        elif "image/webp" in header:
+            content_type = "image/webp"
+            ext = "webp"
+
+    try:
+        file_bytes = base64.b64decode(base64_string)
+    except Exception as e:
+        logger.error(f"Erreur decodage base64: {e}")
+        return ""
+
+    # Generer un chemin unique
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    unique_id = uuid.uuid4().hex[:8]
+    file_path = f"sav-photos/{client_id[:8]}/{timestamp}_{incident_type}_{unique_id}.{ext}"
+
+    # Upload via l'API REST Supabase Storage
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client_http:
+            upload_url = f"{SUPABASE_URL}/storage/v1/object/sav-photos/{file_path}"
+            headers = {
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": content_type,
+            }
+            response = await client_http.post(upload_url, content=file_bytes, headers=headers)
+
+            if response.status_code in (200, 201):
+                public_url = f"{SUPABASE_URL}/storage/v1/object/public/sav-photos/{file_path}"
+                logger.info(f"Photo stockee: {file_path} ({len(file_bytes)} bytes)")
+                return public_url
+            else:
+                logger.error(f"Erreur upload photo: {response.status_code} - {response.text[:200]}")
+                return ""
+    except Exception as e:
+        logger.error(f"Erreur stockage photo: {e}")
+        return ""
+
 
 # System prompt pour Oliver - Version 3.0 (post-call Fabien)
 SYSTEM_PROMPT = """Tu es Oliver, conseiller SAV chez Vitreflam, specialiste du verre ceramique sur-mesure pour cheminees et poeles depuis 1985.
@@ -131,44 +378,77 @@ SYSTEM_PROMPT = """Tu es Oliver, conseiller SAV chez Vitreflam, specialiste du v
 - Tu peux guider vers www.vitreflam.com pour les commandes"""
 
 # System prompt STRICT pour analyse d'images
-IMAGE_ANALYSIS_PROMPT = """Tu es un expert en analyse de dommages sur verre/vitroceramique pour le SAV Vitreflam.
+IMAGE_ANALYSIS_PROMPT = """Tu es un expert FORENSIQUE en analyse de dommages sur verre et vitroceramique pour le SAV Vitreflam.
 
 ## TA MISSION
-Analyser RIGOUREUSEMENT les photos envoyees par les clients pour determiner si le verre est REELLEMENT casse ou endommage.
+Analyser avec une RIGUEUR ABSOLUE les photos envoyees par les clients.
+Tu dois etre SCEPTIQUE par defaut. Tu es le dernier rempart contre la fraude.
 
-## REGLES D'ANALYSE STRICTES
+## ETAPE 1 - VERIFICATION DU CONTENU
+D'abord, determine ce que montre REELLEMENT la photo:
+- Est-ce du verre ou de la vitroceramique ? (pas du plastique, du bois, autre chose)
+- Est-ce un produit plat rectangulaire compatible avec un insert/poele ? (pas une fenetre, un vase, etc.)
+- La photo est-elle prise dans un contexte DOMESTIQUE realiste ? (maison, garage, devant un poele)
+- La photo semble-t-elle prise par un telephone/appareil photo reel ? (pas une image de catalogue, stock photo, ou trouvee sur internet)
 
-### CE QUI CONSTITUE UNE CASSE VALIDE:
-- Fissures visibles traversant le verre
-- Eclats ou morceaux manquants
-- Bris complet en plusieurs morceaux
-- Impact visible avec rayonnement de fissures
+SIGNAUX D'ALERTE D'UNE PHOTO NON AUTHENTIQUE:
+- Fond blanc uni ou fond studio professionnel
+- Eclairage parfaitement uniforme (studio)
+- Image trop nette, trop bien cadree (professionnelle)
+- Filigrane ou watermark visible
+- Texte superpose ou annotations
+- Resolution tres faible (capture d'ecran d'une recherche Google)
+- Proportions non standard (image recadree d'internet)
 
-### CE QUI N'EST PAS UNE CASSE:
-- Rayures superficielles
-- Traces de doigts ou salete
-- Reflets ou jeux de lumiere
-- Photo floue ou mal cadree
-- Image sans rapport avec du verre
-- Verre intact meme s'il y a un emballage abime
+## ETAPE 2 - ANALYSE DES DOMMAGES
+SEULEMENT si l'etape 1 confirme un vrai produit verrier:
 
-### VERIFICATION DE L'EMBALLAGE:
-- Si photo d'emballage: verifier s'il est vraiment endommage (trous, deformations, ecrasement)
-- Un carton un peu abime ne signifie pas que le verre est casse
+### CASSE VALIDE (tous les criteres):
+- Fissures traversantes clairement visibles
+- OU eclats/morceaux manquants sur les bords
+- OU bris complet avec fragments
+- OU impact avec rayonnement de fissures
+- Le dommage doit etre sur le VERRE lui-meme, pas juste l'emballage
 
-## FORMAT DE REPONSE
-Tu dois TOUJOURS donner:
-1. **VERDICT**: CASSE_CONFIRMEE / CASSE_NON_CONFIRMEE / PHOTO_INSUFFISANTE
+### PAS UNE CASSE:
+- Rayures superficielles (n'affectent pas la structure)
+- Traces de doigts, salete, residus de colle
+- Reflets ou jeux de lumiere trompeurs
+- Condensation ou buee
+- Verre INTACT meme si emballage abime
+- Defauts cosmetiques mineurs (micro-eclats < 1mm)
+
+### EMBALLAGE:
+- Un carton legerement abime en surface ≠ contenu casse
+- Verifier des signes d'ecrasement REEL (deformation profonde, trous, pliures fortes)
+- Un carton intact avec verre casse dedans est SUSPECT (possible casse montage declaree comme transport)
+
+## ETAPE 3 - TYPE DE PHOTO
+Identifie ce que montre la photo:
+- PHOTO_VERRE_CASSE : Le verre/vitroceramique avec des dommages visibles
+- PHOTO_EMBALLAGE : L'emballage/carton de livraison
+- PHOTO_ETIQUETTE : L'etiquette de transport Colissimo
+- PHOTO_INSTALLATION : Le verre installe dans le poele/insert
+- PHOTO_HORS_SUJET : Image sans rapport avec du verre ou un produit Vitreflam
+- PHOTO_AMBIGUE : Impossible de determiner clairement
+
+## FORMAT DE REPONSE OBLIGATOIRE
+1. **VERDICT**: CASSE_CONFIRMEE / CASSE_NON_CONFIRMEE / PHOTO_INSUFFISANTE / HORS_SUJET
 2. **CONFIANCE**: Pourcentage de certitude (ex: 85%)
-3. **DETAILS**: Ce que tu vois precisement dans l'image
-4. **RECOMMANDATION**: Action a prendre
+3. **TYPE_PHOTO**: Un des types ci-dessus
+4. **AUTHENTICITE**: AUTHENTIQUE / SUSPECTE / INDETERMINEE (la photo semble-t-elle reelle?)
+5. **DETAILS**: Description factuelle et precise de ce que tu vois
+6. **ANOMALIES**: Tout element suspect ou incoherent (vide si rien)
+7. **RECOMMANDATION**: Action a prendre
 
-## IMPORTANT
-- Sois SCEPTIQUE par defaut
-- Ne confirme une casse QUE si tu vois clairement des dommages
-- En cas de doute, demande une meilleure photo
-- Ne te laisse pas influencer par le message du client
-- Base ton analyse UNIQUEMENT sur ce que tu VOIS dans l'image"""
+## REGLES CRITIQUES
+- SCEPTIQUE PAR DEFAUT: en cas de doute, verdict = PHOTO_INSUFFISANTE
+- NE TE LAISSE JAMAIS influencer par le message du client
+- Base ton analyse UNIQUEMENT sur ce que tu VOIS
+- Une seule photo ne suffit JAMAIS pour confirmer un remplacement
+- JAMAIS de verdict CASSE_CONFIRMEE si confiance < 70%
+- Si la photo semble provenir d'internet: AUTHENTICITE = SUSPECTE
+- Si le verre montre n'est clairement pas de la vitroceramique pour poele: HORS_SUJET"""
 
 
 class ChatRequest(BaseModel):
@@ -363,7 +643,46 @@ async def save_message(conversation_id: str, role: str, content: str, intent: st
         logger.info(f"Message sauvegarde ({role})")
 
 
-async def create_incident(client_id: str, conversation_id: str, incident_type: str, description: str, photo_analysis: dict = None):
+async def get_incident_photo_count(client_id: str, incident_type: str) -> dict:
+    """Recupere le nombre de photos deja recues pour un incident en cours."""
+    existing = await supabase_request(
+        "GET",
+        f"incidents?client_id=eq.{client_id}&type_incident=eq.{incident_type}&statut=in.(ouvert,en_cours,en_attente_photos)&select=id,metadata,type_incident&limit=1"
+    )
+
+    if not isinstance(existing, list) or len(existing) == 0:
+        return {"count": 0, "types_recus": [], "incident_id": None}
+
+    incident = existing[0]
+    metadata = incident.get("metadata") or {}
+    photos_meta = metadata.get("photos", [])
+
+    return {
+        "count": len(photos_meta),
+        "types_recus": [p.get("type") for p in photos_meta if p.get("type")],
+        "incident_id": incident["id"],
+    }
+
+
+def get_required_photos(incident_type: str) -> list:
+    """Retourne les types de photos requises selon le type d'incident."""
+    if incident_type in ("casse_transport", "casse_general"):
+        return [
+            {"type": "PHOTO_VERRE_CASSE", "label": "le verre casse avec les dommages visibles"},
+            {"type": "PHOTO_EMBALLAGE", "label": "l'emballage exterieur (carton)"},
+        ]
+    elif incident_type == "casse_montage":
+        return [
+            {"type": "PHOTO_VERRE_CASSE", "label": "le verre casse avec les dommages visibles"},
+        ]
+    elif incident_type == "probleme_dimensions":
+        return [
+            {"type": "PHOTO_VERRE_CASSE", "label": "le verre avec un metre pour verifier les dimensions"},
+        ]
+    return [{"type": "PHOTO_VERRE_CASSE", "label": "le produit concerne"}]
+
+
+async def create_incident(client_id: str, conversation_id: str, incident_type: str, description: str, photo_analysis: dict = None, photo_url: str = None):
     """Cree un incident SAV dans Supabase"""
 
     # Verifier si un incident similaire existe deja pour ce client (eviter doublons)
@@ -373,7 +692,31 @@ async def create_incident(client_id: str, conversation_id: str, incident_type: s
     )
 
     if isinstance(existing, list) and len(existing) > 0:
-        logger.info(f"Incident existant trouve, pas de doublon")
+        # Incident existant -> ajouter la photo si nouvelle
+        if photo_analysis and photo_url:
+            incident = existing[0]
+            metadata = incident.get("metadata") or {}
+            photos = metadata.get("photos", [])
+            photo_type = photo_analysis.get("photo_type", "PHOTO_VERRE_CASSE")
+
+            photos.append({
+                "type": photo_type,
+                "url": photo_url,
+                "verdict": photo_analysis.get("verdict"),
+                "confidence": photo_analysis.get("confidence"),
+                "authenticity": photo_analysis.get("authenticity", "INDETERMINEE"),
+                "exif_score": photo_analysis.get("exif_score", 0),
+                "date": datetime.now().isoformat(),
+            })
+            metadata["photos"] = photos
+
+            await supabase_request("PATCH", f"incidents?id=eq.{incident['id']}", {
+                "metadata": metadata,
+                "photos_recues": True,
+                "photos_urls": [p["url"] for p in photos if p.get("url")],
+            })
+            logger.info(f"Photo ajoutee a l'incident existant ({len(photos)} photos total)")
+
         return existing[0]
 
     incident = {
@@ -387,27 +730,32 @@ async def create_incident(client_id: str, conversation_id: str, incident_type: s
         "created_at": datetime.now().isoformat()
     }
 
+    photos_list = []
     if photo_analysis:
         incident["statut"] = "ouvert"
+        photo_type = photo_analysis.get("photo_type", "PHOTO_VERRE_CASSE")
+        photos_list.append({
+            "type": photo_type,
+            "url": photo_url or "",
+            "verdict": photo_analysis.get("verdict"),
+            "confidence": photo_analysis.get("confidence"),
+            "authenticity": photo_analysis.get("authenticity", "INDETERMINEE"),
+            "exif_score": photo_analysis.get("exif_score", 0),
+            "date": datetime.now().isoformat(),
+        })
         incident["metadata"] = {
+            "photos": photos_list,
             "photo_verdict": photo_analysis.get("verdict"),
             "photo_confidence": photo_analysis.get("confidence"),
             "photo_analysis": photo_analysis.get("analysis", "")[:500]
         }
+        if photo_url:
+            incident["photos_urls"] = [photo_url]
 
     result = await supabase_request("POST", "incidents", incident)
 
     if isinstance(result, list) and len(result) > 0:
         logger.info(f"Incident cree: {incident_type} (statut: {incident['statut']})")
-
-        # Incrementer nb_incidents du client
-        await supabase_request(
-            "PATCH",
-            f"clients?id=eq.{client_id}",
-            {"nb_incidents": (await supabase_request("GET", f"incidents?client_id=eq.{client_id}&select=id"))
-             if False else 1}  # Simple increment pour l'instant
-        )
-
         return result[0]
 
     return None
@@ -1075,11 +1423,30 @@ async def build_full_context(client: dict, client_id: str, message: str) -> str:
 # ============================================================
 
 def analyze_image_with_claude(image_base64: str, image_type: str, user_message: str) -> dict:
-    """Analyse une image avec Claude Vision de maniere STRICTE"""
+    """Analyse une image avec Claude Vision + verification EXIF d'authenticite."""
 
     if not claude:
         return {"error": "Claude non configure"}
 
+    # 1. Extraction EXIF et score d'authenticite (AVANT Claude Vision)
+    exif_data = extract_exif_from_base64(image_base64)
+    auth_result = analyze_photo_authenticity(exif_data)
+
+    logger.info(f"EXIF: format={exif_data['format']}, device={auth_result['device']}, "
+                f"score={auth_result['score']}/100, level={auth_result['level']}, "
+                f"flags={auth_result['flags']}")
+
+    # Si score EXIF tres bas, on signale mais on continue l'analyse Claude
+    exif_warning = ""
+    if auth_result["score"] < 35:
+        exif_warning = (f"\n\nATTENTION METADATA: Score authenticite {auth_result['score']}/100 (SUSPECT). "
+                        f"Alertes: {', '.join(auth_result['flags'])}. "
+                        f"Cette photo pourrait ne pas etre une vraie photo prise par le client.")
+    elif auth_result["score"] < 65:
+        exif_warning = (f"\n\nNOTE METADATA: Score authenticite {auth_result['score']}/100 (INDETERMINE). "
+                        f"Alertes: {', '.join(auth_result['flags'])}.")
+
+    # 2. Analyse Claude Vision
     media_type = image_type if image_type else "image/jpeg"
     if "png" in media_type.lower():
         media_type = "image/png"
@@ -1089,6 +1456,11 @@ def analyze_image_with_claude(image_base64: str, image_type: str, user_message: 
         media_type = "image/webp"
     else:
         media_type = "image/jpeg"
+
+    # Nettoyer le prefix data URI pour Claude
+    clean_base64 = image_base64
+    if "," in clean_base64:
+        clean_base64 = clean_base64.split(",", 1)[1]
 
     try:
         response = claude.messages.create(
@@ -1104,12 +1476,12 @@ def analyze_image_with_claude(image_base64: str, image_type: str, user_message: 
                             "source": {
                                 "type": "base64",
                                 "media_type": media_type,
-                                "data": image_base64
+                                "data": clean_base64
                             }
                         },
                         {
                             "type": "text",
-                            "text": f"Message du client: '{user_message}'\n\nAnalyse cette image de maniere STRICTE."
+                            "text": f"Message du client: '{user_message}'\n\nAnalyse cette image de maniere STRICTE.{exif_warning}"
                         }
                     ]
                 }
@@ -1118,25 +1490,62 @@ def analyze_image_with_claude(image_base64: str, image_type: str, user_message: 
 
         analysis_text = response.content[0].text
 
+        # Parser le verdict
         verdict = "INCONNU"
-        confidence = 0
-
-        if "CASSE_CONFIRMEE" in analysis_text.upper():
+        upper_text = analysis_text.upper()
+        if "HORS_SUJET" in upper_text:
+            verdict = "HORS_SUJET"
+        elif "CASSE_CONFIRMEE" in upper_text:
             verdict = "CASSE_CONFIRMEE"
-        elif "CASSE_NON_CONFIRMEE" in analysis_text.upper():
+        elif "CASSE_NON_CONFIRMEE" in upper_text:
             verdict = "CASSE_NON_CONFIRMEE"
-        elif "PHOTO_INSUFFISANTE" in analysis_text.upper():
+        elif "PHOTO_INSUFFISANTE" in upper_text:
             verdict = "PHOTO_INSUFFISANTE"
 
+        # Parser la confiance
+        confidence = 0
         confidence_match = re.search(r'(\d{1,3})\s*%', analysis_text)
         if confidence_match:
             confidence = int(confidence_match.group(1))
+
+        # Parser le type de photo
+        photo_type = "PHOTO_AMBIGUE"
+        for pt in ["PHOTO_VERRE_CASSE", "PHOTO_EMBALLAGE", "PHOTO_ETIQUETTE",
+                    "PHOTO_INSTALLATION", "PHOTO_HORS_SUJET"]:
+            if pt in upper_text:
+                photo_type = pt
+                break
+
+        # Parser l'authenticite visuelle (Claude)
+        visual_auth = "INDETERMINEE"
+        if "AUTHENTIQUE" in upper_text and "AUTHENTICITE" in upper_text:
+            visual_auth = "AUTHENTIQUE"
+        elif "SUSPECTE" in upper_text and "AUTHENTICITE" in upper_text:
+            visual_auth = "SUSPECTE"
+
+        # Combiner authenticite EXIF + authenticite visuelle Claude
+        combined_auth = auth_result["level"]
+        if visual_auth == "SUSPECTE" or auth_result["level"] == "SUSPECTE":
+            combined_auth = "SUSPECTE"
+        elif visual_auth == "AUTHENTIQUE" and auth_result["level"] == "AUTHENTIQUE":
+            combined_auth = "AUTHENTIQUE"
+
+        # Validation stricte: casse confirmee SEULEMENT si confiance >= 70 ET pas suspect
+        is_valid = (verdict == "CASSE_CONFIRMEE"
+                    and confidence >= 70
+                    and combined_auth != "SUSPECTE"
+                    and verdict != "HORS_SUJET")
 
         return {
             "verdict": verdict,
             "confidence": confidence,
             "analysis": analysis_text,
-            "is_valid_claim": verdict == "CASSE_CONFIRMEE" and confidence >= 70
+            "photo_type": photo_type,
+            "authenticity": combined_auth,
+            "exif_score": auth_result["score"],
+            "exif_flags": auth_result["flags"],
+            "exif_device": auth_result["device"],
+            "is_valid_claim": is_valid,
         }
 
     except Exception as e:
@@ -1144,19 +1553,22 @@ def analyze_image_with_claude(image_base64: str, image_type: str, user_message: 
         return {"error": str(e)}
 
 
-def generate_response_with_image_context(user_message: str, image_analysis: dict, full_context: str, language: str = "fr", history_count: int = 0) -> str:
-    """Genere une reponse en tenant compte de l'analyse d'image"""
+def generate_response_with_image_context(user_message: str, image_analysis: dict, full_context: str,
+                                         language: str = "fr", history_count: int = 0,
+                                         photo_status: dict = None) -> str:
+    """Genere une reponse en tenant compte de l'analyse d'image + multi-photos."""
 
     verdict = image_analysis.get("verdict", "INCONNU")
     confidence = image_analysis.get("confidence", 0)
     analysis = image_analysis.get("analysis", "")
     is_valid = image_analysis.get("is_valid_claim", False)
     has_error = "error" in image_analysis
+    authenticity = image_analysis.get("authenticity", "INDETERMINEE")
+    photo_type = image_analysis.get("photo_type", "PHOTO_AMBIGUE")
+    exif_score = image_analysis.get("exif_score", 0)
 
     # Construire le contexte d'image
     if has_error:
-        error_msg = image_analysis.get("error", "Erreur inconnue")
-        logger.error(f"Erreur analyse image: {error_msg}")
         image_context = """
 
 ## PROBLEME TECHNIQUE AVEC LA PHOTO:
@@ -1170,34 +1582,80 @@ def generate_response_with_image_context(user_message: str, image_analysis: dict
 ## ANALYSE DE LA PHOTO ENVOYEE:
 - **Verdict**: {verdict}
 - **Confiance**: {confidence}%
+- **Type de photo**: {photo_type}
+- **Authenticite**: {authenticity} (score EXIF: {exif_score}/100)
 - **Details**: {analysis[:500]}
 - IMPORTANT: Tu as BIEN VU et ANALYSE l'image du client. Ne dis JAMAIS que tu n'as pas pu voir l'image.
 
 ## INSTRUCTIONS SELON VERDICT:
 """
-        if verdict == "CASSE_CONFIRMEE" and is_valid:
+        if verdict == "HORS_SUJET":
             image_context += """
-- La casse est CONFIRMEE visuellement
-- NE PROMETS PAS de remplacement immediatement
-- Demande D'ABORD: date de reception, type d'assurance souscrite
-- Rappelle qu'il faut verifier en presence du livreur (casse transport)
-- Mentionne l'assurance habitation du client
+- Cette photo NE MONTRE PAS un produit Vitreflam (verre/vitroceramique pour poele ou cheminee)
+- Sois poli mais ferme: "Cette photo ne semble pas correspondre a un produit Vitreflam."
+- Demande une photo du verre ceramique concerne
+"""
+        elif authenticity == "SUSPECTE":
+            image_context += f"""
+- ATTENTION: La photo est SUSPECTE (score authenticite: {exif_score}/100)
+- NE CONFIRME PAS la casse. Dis au client que la photo ne peut pas etre validee.
+- Demande une NOUVELLE photo prise MAINTENANT avec son telephone, directement depuis l'appareil photo (pas depuis la galerie)
+- Signaux suspects: {', '.join(image_analysis.get('exif_flags', []))}
+"""
+        elif verdict == "CASSE_CONFIRMEE" and is_valid:
+            image_context += """
+- La casse semble CONFIRMEE visuellement
+- MAIS tu NE PEUX PAS confirmer le remplacement toi-meme
+- Dis: "J'ai bien recu et analyse votre photo. Je constate effectivement des dommages."
+- Demande les informations manquantes: date de reception, numero de commande, type d'assurance
+- Redirige vers contactglassgroup@gmail.com pour la validation finale du remplacement
+- NE PROMETS JAMAIS un remplacement gratuit ou a prix reduit, c'est l'equipe humaine qui decide
 """
         elif verdict == "CASSE_NON_CONFIRMEE":
             image_context += """
-- La photo NE MONTRE PAS de casse evidente sur un produit Vitreflam
-- Sois poli mais ferme: explique ce que tu vois (peut-etre pas un produit Vitreflam?)
-- Demande une nouvelle photo plus claire si necessaire
+- La photo NE MONTRE PAS de casse evidente
+- Sois poli mais ferme: decris ce que tu vois reellement
+- Demande une meilleure photo si le client insiste
 """
         elif verdict == "PHOTO_INSUFFISANTE":
             image_context += """
-- La photo n'est pas suffisante pour analyser
-- Demande une nouvelle photo: bien eclairee, nette, montrant le verre et les dommages
+- La photo n'est pas exploitable (floue, mal cadree, trop sombre...)
+- Demande une nouvelle photo: bien eclairee, nette, montrant clairement le verre et les dommages
 """
         else:
             image_context += """
 - Analyse non concluante
 - Demande au client de renvoyer une photo plus claire du verre ceramique
+"""
+
+    # Contexte multi-photos : quelles photos manquent
+    if photo_status:
+        required = photo_status.get("required", [])
+        received = photo_status.get("types_recus", [])
+        missing = [r for r in required if r["type"] not in received]
+        if missing:
+            image_context += f"""
+
+## PHOTOS MANQUANTES:
+Tu as recu {len(received)} photo(s) mais il en faut {len(required)} pour traiter le dossier.
+Photos encore necessaires:
+"""
+            for m in missing:
+                image_context += f"- {m['label']}\n"
+            image_context += "Demande au client d'envoyer les photos manquantes.\n"
+        elif len(received) >= len(required):
+            image_context += """
+
+## PHOTOS COMPLETES:
+Toutes les photos requises ont ete recues. Redirige le client vers contactglassgroup@gmail.com pour finaliser le traitement de son dossier.
+"""
+
+    image_context += """
+
+## REGLE ABSOLUE:
+Tu ne confirmes JAMAIS un remplacement, un remboursement ou un avoir.
+Tu CONSTATES l'etat de la photo et tu REDIRIGES vers l'equipe SAV humaine (contactglassgroup@gmail.com).
+Seule l'equipe humaine peut valider un remplacement.
 """
 
     # Instruction de langue
@@ -1213,7 +1671,7 @@ def generate_response_with_image_context(user_message: str, image_analysis: dict
     try:
         response = claude.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=250,
+            max_tokens=300,
             system=full_system,
             messages=[
                 {"role": "user", "content": user_message}
@@ -1408,8 +1866,9 @@ async def chat(request: ChatRequest):
 
     # 6. Traiter selon presence d'image ou non
     image_analysis = None
+    photo_status = None
     if has_image:
-        logger.info("Analyse de l'image...")
+        logger.info("Analyse de l'image (EXIF + Claude Vision)...")
         image_analysis = analyze_image_with_claude(
             request.image_base64,
             request.image_type,
@@ -1417,17 +1876,42 @@ async def chat(request: ChatRequest):
         )
 
         if "error" not in image_analysis:
-            logger.info(f"Analyse: {image_analysis['verdict']} ({image_analysis['confidence']}%)")
+            logger.info(f"Analyse: verdict={image_analysis['verdict']} "
+                        f"confiance={image_analysis['confidence']}% "
+                        f"authenticite={image_analysis.get('authenticity')} "
+                        f"exif={image_analysis.get('exif_score')}/100 "
+                        f"type={image_analysis.get('photo_type')}")
 
-            # Creer incident si casse detectee
-            if image_analysis.get("is_valid_claim") and client_id:
+            # Stocker la photo dans Supabase Storage
+            photo_url = ""
+            if client_id:
+                incident_type = intent if "casse" in intent else "casse_general"
+                photo_url = await store_photo_supabase(
+                    request.image_base64, client_id, incident_type
+                )
+                if photo_url:
+                    logger.info(f"Photo stockee: {photo_url}")
+
+            # Creer/mettre a jour incident avec la photo
+            if client_id:
+                incident_type = intent if "casse" in intent else "casse_general"
                 await create_incident(
                     client_id,
                     conversation_id,
-                    intent if "casse" in intent else "casse_general",
+                    incident_type,
                     request.message,
-                    image_analysis
+                    image_analysis,
+                    photo_url
                 )
+
+                # Multi-photos : verifier quelles photos on a
+                current_photos = await get_incident_photo_count(client_id, incident_type)
+                required = get_required_photos(incident_type)
+                photo_status = {
+                    "count": current_photos["count"],
+                    "types_recus": current_photos["types_recus"],
+                    "required": required,
+                }
         else:
             logger.error(f"Erreur analyse image: {image_analysis.get('error')}")
 
@@ -1436,7 +1920,8 @@ async def chat(request: ChatRequest):
             image_analysis,
             full_context,
             request.language,
-            history_count
+            history_count,
+            photo_status
         )
     else:
         # Reponse normale sans image

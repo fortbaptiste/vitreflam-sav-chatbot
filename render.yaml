@@ -13,3 +13,5 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: COLISSIMO_API_KEY
+        sync: false

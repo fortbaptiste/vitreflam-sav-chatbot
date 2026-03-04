@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+COLISSIMO_API_KEY = os.getenv("COLISSIMO_API_KEY")
 
 # Client Claude
 claude: Optional[anthropic.Anthropic] = None
@@ -109,6 +110,13 @@ SYSTEM_PROMPT = """Tu es Oliver, conseiller SAV chez Vitreflam, specialiste du v
 - Oliver ne propose l'email QUE quand il ne peut plus aider (dimensions, cas complexes, client tres frustre)
 - Formule : "Pour une prise en charge personnalisee, merci de nous ecrire a **contactglassgroup@gmail.com**."
 - Ne JAMAIS donner l'email des les premiers messages sauf si necessaire
+
+## SUIVI DE COLIS EN TEMPS REEL
+- Tu as acces au suivi Colissimo en temps reel. Quand un client te donne un numero de suivi, tu recois automatiquement les donnees de suivi.
+- Presente le statut clairement : ou en est le colis, derniers evenements, lien de suivi.
+- Si le colis est en cours d'acheminement, rassure le client.
+- Inclus TOUJOURS le lien de suivi pour que le client puisse verifier lui-meme.
+- Si tu n'as pas le numero de suivi, demande-le au client (format 13 caracteres, commence par 6A, 6C, 8R, etc.).
 
 ## AUTRES REGLES
 - Ne dis "Bonjour" qu'UNE SEULE FOIS au tout debut, jamais apres
@@ -832,6 +840,167 @@ def detect_intent(message: str) -> str:
 
 
 # ============================================================
+# SUIVI COLIS COLISSIMO
+# ============================================================
+
+def extract_tracking_numbers(message: str) -> list:
+    """Extrait les numeros de suivi Colissimo d'un message"""
+    # Nettoyer : retirer espaces, tirets, points dans les sequences alphanumeriques
+    cleaned = re.sub(r'(\w)[.\-\s]+(\w)', r'\1\2', message)
+
+    patterns = [
+        # National : 1 chiffre (6-9) + 1 lettre (A-Z) + 11 chiffres
+        r'[6-9][A-Z]\d{11}',
+        # National : 5 + lettre (N-Z) + 11 chiffres
+        r'5[N-Z]\d{11}',
+        # International : 2 alpha + 9 chiffres + 2 alpha (pays)
+        r'[A-Z]{2}\d{9}[A-Z]{2}',
+        # Avis de passage : 11 chiffres
+        r'\b\d{11}\b',
+    ]
+
+    numbers = []
+    for pattern in patterns:
+        matches = re.findall(pattern, cleaned.upper())
+        for m in matches:
+            if m not in numbers:
+                numbers.append(m)
+
+    return numbers[:3]  # Max 3 numeros
+
+
+async def track_shipment_colissimo(tracking_numbers: list, lang: str = "fr") -> dict:
+    """Appelle l'API Colissimo Suivi TL pour suivre des colis"""
+    if not COLISSIMO_API_KEY:
+        return {"success": False, "error": "Cle API Colissimo non configuree", "shipments": []}
+
+    # Mapping langue chatbot -> locale Colissimo
+    lang_map = {
+        "fr": "fr_FR", "en": "en_GB", "de": "de_DE",
+        "es": "es_ES", "it": "it_IT", "nl": "nl_NL"
+    }
+    locale = lang_map.get(lang, "fr_FR")
+
+    url = "https://ws.colissimo.fr/tracking-timeline-ws/rest/tracking/timelineCompany"
+    shipments = []
+
+    async with httpx.AsyncClient() as client:
+        for number in tracking_numbers:
+            try:
+                response = await client.post(
+                    url,
+                    json={
+                        "apiKey": COLISSIMO_API_KEY,
+                        "parcelNumber": number,
+                        "lang": locale
+                    },
+                    timeout=15.0
+                )
+                data = response.json()
+                status_code = data.get("status", [{}])[0].get("code", "")
+                status_msg = data.get("status", [{}])[0].get("message", "")
+
+                if status_code == "0" and data.get("parcel"):
+                    shipments.append({"number": number, "data": data["parcel"], "status": "ok"})
+                else:
+                    shipments.append({"number": number, "data": None, "status": status_code, "message": status_msg})
+
+            except httpx.TimeoutException:
+                shipments.append({"number": number, "data": None, "status": "timeout", "message": "API Colissimo indisponible"})
+            except Exception as e:
+                logger.error(f"Erreur suivi Colissimo {number}: {e}")
+                shipments.append({"number": number, "data": None, "status": "error", "message": str(e)})
+
+    return {"success": any(s["status"] == "ok" for s in shipments), "shipments": shipments}
+
+
+def format_tracking_context(result: dict, numbers: list) -> str:
+    """Formate les donnees de suivi en contexte pour Claude"""
+    if not result["shipments"]:
+        return ""
+
+    parts = ["\n## DONNEES DE SUIVI COLIS EN TEMPS REEL:"]
+
+    step_names = {
+        0: "Annonce", 1: "Prise en charge", 2: "Acheminement",
+        3: "Arrivee sur site", 4: "Livraison", 5: "Livre"
+    }
+
+    for shipment in result["shipments"]:
+        number = shipment["number"]
+
+        if shipment["status"] != "ok" or not shipment["data"]:
+            # Erreur ou numero invalide
+            error_msg = shipment.get("message", "Erreur inconnue")
+            if shipment["status"] == "101":
+                parts.append(f"\n**Colis {number}** : Numero de suivi invalide. Demande au client de verifier.")
+            elif shipment["status"] == "105":
+                parts.append(f"\n**Colis {number}** : Numero inconnu. Le colis n'a peut-etre pas encore ete pris en charge.")
+            elif shipment["status"] in ("104",):
+                parts.append(f"\n**Colis {number}** : Ce colis n'est pas associe a notre compte.")
+            else:
+                parts.append(f"\n**Colis {number}** : Impossible de recuperer le suivi ({error_msg}).")
+            parts.append(f"Lien suivi manuel : https://www.laposte.fr/outils/suivre-vos-envois?code={number}")
+            continue
+
+        parcel = shipment["data"]
+
+        # Progression : trouver l'etape active la plus avancee
+        steps = parcel.get("step", [])
+        current_step = 0
+        current_label = ""
+        for step in steps:
+            if step.get("status") == "STEP_STATUS_ACTIVE":
+                current_step = step.get("stepId", 0)
+                current_label = step.get("labelShort", "")
+
+        # Barre de progression
+        progress = " > ".join(
+            f"**[{step_names[i]}]**" if i <= current_step else step_names[i]
+            for i in range(6)
+        )
+        parts.append(f"\n**Colis {number}** :")
+        parts.append(f"Progression : {progress}")
+
+        if current_label:
+            parts.append(f"Statut actuel : {current_label}")
+
+        # 3 derniers evenements
+        events = parcel.get("event", [])
+        if events:
+            parts.append("Derniers evenements :")
+            for evt in events[:3]:
+                date_str = evt.get("date", "")
+                if date_str:
+                    try:
+                        dt = datetime.fromisoformat(date_str.replace(".000", ""))
+                        date_str = dt.strftime("%d/%m/%Y a %H:%M")
+                    except:
+                        pass
+                label = evt.get("labelLong", "")
+                site = evt.get("siteName", "")
+                parts.append(f"  - {date_str} : {label}" + (f" ({site})" if site else ""))
+
+        # Point relais
+        removal = parcel.get("removalPoint")
+        if removal:
+            site_name = removal.get("siteName", "")
+            address = removal.get("address2", "")
+            city = removal.get("city", "")
+            end_date = removal.get("endOfWithdrawDate", "")
+            if site_name:
+                parts.append(f"Point de retrait : {site_name}, {address} {city}")
+            if end_date:
+                parts.append(f"A retirer avant le : {end_date}")
+
+        parts.append(f"Lien suivi : https://www.laposte.fr/outils/suivre-vos-envois?code={number}")
+
+    parts.append("\nINSTRUCTION: Presente ces informations de facon claire et naturelle au client. Inclus toujours le lien de suivi. Rassure le client sur le bon acheminement si tout se passe normalement.")
+
+    return "\n".join(parts)
+
+
+# ============================================================
 # CONSTRUCTION DU CONTEXTE COMPLET
 # ============================================================
 
@@ -1066,6 +1235,11 @@ async def lifespan(app: FastAPI):
 
     await test_supabase()
 
+    if COLISSIMO_API_KEY:
+        logger.info("Cle API Colissimo Suivi configuree")
+    else:
+        logger.warning("COLISSIMO_API_KEY manquante - suivi colis desactive")
+
     # Nettoyage initial des conversations inactives
     closed = await close_inactive_conversations(30)
     logger.info(f"Nettoyage initial: {closed} conversation(s) fermee(s)")
@@ -1144,8 +1318,23 @@ async def chat(request: ChatRequest):
     if client_id and conversation_id:
         await auto_create_incident_if_needed(client_id, conversation_id, intent, request.message)
 
+    # 3e. Suivi colis Colissimo si intent suivi ou retard
+    tracking_context = ""
+    if intent in ("suivi", "retard"):
+        tracking_numbers = extract_tracking_numbers(request.message)
+        if tracking_numbers:
+            logger.info(f"Numeros de suivi detectes: {tracking_numbers}")
+            tracking_result = await track_shipment_colissimo(tracking_numbers, request.language or "fr")
+            tracking_context = format_tracking_context(tracking_result, tracking_numbers)
+        else:
+            tracking_context = "\n\n## INSTRUCTION SUIVI COLIS:\nLe client demande un suivi de colis mais n'a pas fourni de numero de suivi. Demande-lui son numero de suivi Colissimo (format: 13 caracteres, commence par 6A, 6C, 8R, etc.). Il se trouve sur l'email de confirmation d'expedition ou sur l'avis de passage."
+
     # 4. Construire le contexte complet (client + historique + incidents + KB)
     full_context = await build_full_context(client, client_id, request.message)
+
+    # Injecter le contexte de suivi colis
+    if tracking_context:
+        full_context += tracking_context
 
     # 4b. Contexte specifique selon l'intent
     if intent == "dimensions":
@@ -1264,6 +1453,7 @@ async def health():
         "version": "3.0",
         "anthropic": claude is not None,
         "supabase_url": SUPABASE_URL is not None,
+        "colissimo_api": COLISSIMO_API_KEY is not None,
         "timestamp": datetime.now().isoformat()
     }
 

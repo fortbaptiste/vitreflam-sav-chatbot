@@ -111,11 +111,11 @@ SYSTEM_PROMPT = """Tu es Oliver, conseiller SAV chez Vitreflam, specialiste du v
 - Formule : "Pour une prise en charge personnalisee, merci de nous ecrire a **contactglassgroup@gmail.com**."
 - Ne JAMAIS donner l'email des les premiers messages sauf si necessaire
 
-## SUIVI DE COLIS EN TEMPS REEL
-- Tu as acces au suivi Colissimo en temps reel. Quand un client te donne un numero de suivi, tu recois automatiquement les donnees de suivi.
-- Presente le statut clairement : ou en est le colis, derniers evenements, lien de suivi.
-- Si le colis est en cours d'acheminement, rassure le client.
-- Inclus TOUJOURS le lien de suivi pour que le client puisse verifier lui-meme.
+## SUIVI DE COLIS - REGLES STRICTES
+- Quand un client demande le suivi d'un colis, les donnees reelles apparaitront dans la section "DONNEES DE SUIVI COLIS EN TEMPS REEL" du contexte.
+- **N'INVENTE JAMAIS** de date de livraison, de statut, d'evenement ou d'information de suivi. JAMAIS.
+- Si tu vois la section "DONNEES DE SUIVI COLIS EN TEMPS REEL" dans le contexte, utilise UNIQUEMENT ces donnees. Cite les dates et statuts EXACTEMENT comme fournis.
+- Si tu ne vois PAS cette section dans le contexte, dis simplement au client que tu n'as pas pu recuperer les informations et donne-lui le lien : https://www.laposte.fr/outils/suivre-vos-envois
 - Si tu n'as pas le numero de suivi, demande-le au client (format 13 caracteres, commence par 6A, 6C, 8R, etc.).
 
 ## MULTILINGUISME
@@ -826,7 +826,16 @@ def detect_intent(message: str) -> str:
         return "dimensions"
 
     # Suivi commande
-    elif any(word in msg_lower for word in ["suivi", "commande", "livraison", "ou en est", "numero", "tracking"]):
+    elif any(word in msg_lower for word in [
+        "suivi", "commande", "livraison", "ou en est", "ou est", "numero", "tracking",
+        "colis", "colissimo", "expedition", "expedie", "envoye", "envoi", "recois",
+        "recevoir", "recu", "livre", "acheminement", "statut",
+        "where is", "parcel", "package", "shipment", "track", "delivery", "delivered",
+        "wo ist", "paket", "sendung", "lieferung",
+        "waar is", "pakket", "verzending",
+        "donde esta", "paquete", "envio", "seguimiento",
+        "dov'e", "pacco", "spedizione"
+    ]):
         return "suivi"
 
     # Remboursement
@@ -1008,12 +1017,13 @@ def format_tracking_context(result: dict, numbers: list) -> str:
 
         parts.append(f"Lien suivi : https://www.laposte.fr/outils/suivre-vos-envois?code={number}")
 
-    parts.append("\n## INSTRUCTIONS STRICTES SUIVI COLIS:")
-    parts.append("- UTILISE UNIQUEMENT les donnees ci-dessus. N'INVENTE JAMAIS de dates, statuts ou evenements.")
-    parts.append("- Si les donnees montrent etape 0 (Annonce), dis que le colis est en preparation, PAS en livraison.")
-    parts.append("- Cite les dates et evenements EXACTEMENT comme fournis ci-dessus.")
-    parts.append("- Inclus TOUJOURS le lien de suivi.")
-    parts.append("- Si le statut est 'Annonce/Preparation', rassure le client que le colis sera bientot pris en charge par Colissimo.")
+    parts.append("\n## INSTRUCTIONS ABSOLUES - SUIVI COLIS:")
+    parts.append("- Les donnees ci-dessus sont les SEULES donnees fiables. UTILISE-LES EXACTEMENT.")
+    parts.append("- N'INVENTE AUCUNE date, AUCUN statut, AUCUN evenement qui n'apparait pas ci-dessus.")
+    parts.append("- N'AJOUTE PAS d'informations de livraison si le colis est en etape 0 (Annonce/Preparation).")
+    parts.append("- Etape 0 = en preparation, Etape 1 = pris en charge, Etape 2 = en acheminement, Etape 3 = arrive sur site, Etape 4 = en livraison, Etape 5 = livre.")
+    parts.append("- Cite les dates EXACTEMENT comme indiquees ci-dessus. Ne les modifie pas.")
+    parts.append("- Inclus TOUJOURS le lien de suivi dans ta reponse.")
 
     return "\n".join(parts)
 
@@ -1336,16 +1346,21 @@ async def chat(request: ChatRequest):
     if client_id and conversation_id:
         await auto_create_incident_if_needed(client_id, conversation_id, intent, request.message)
 
-    # 3e. Suivi colis Colissimo si intent suivi ou retard
+    # 3e. Suivi colis Colissimo
+    # TOUJOURS chercher des numeros de suivi dans le message, quel que soit l'intent
     tracking_context = ""
-    if intent in ("suivi", "retard"):
-        tracking_numbers = extract_tracking_numbers(request.message)
-        if tracking_numbers:
-            logger.info(f"Numeros de suivi detectes: {tracking_numbers}")
-            tracking_result = await track_shipment_colissimo(tracking_numbers, request.language or "fr")
-            tracking_context = format_tracking_context(tracking_result, tracking_numbers)
-        else:
-            tracking_context = "\n\n## INSTRUCTION SUIVI COLIS:\nLe client demande un suivi de colis mais n'a pas fourni de numero de suivi. Demande-lui son numero de suivi Colissimo (format: 13 caracteres, commence par 6A, 6C, 8R, etc.). Il se trouve sur l'email de confirmation d'expedition ou sur l'avis de passage."
+    tracking_numbers = extract_tracking_numbers(request.message)
+
+    if tracking_numbers:
+        # Des numeros de suivi sont presents -> appeler l'API Colissimo
+        logger.info(f"Numeros de suivi detectes: {tracking_numbers}")
+        tracking_result = await track_shipment_colissimo(tracking_numbers, request.language or "fr")
+        tracking_context = format_tracking_context(tracking_result, tracking_numbers)
+        if intent == "general":
+            intent = "suivi"  # Corriger l'intent si un numero est detecte
+    elif intent in ("suivi", "retard"):
+        # Intent suivi mais pas de numero -> demander le numero
+        tracking_context = "\n\n## INSTRUCTION SUIVI COLIS:\nLe client demande un suivi de colis mais n'a pas fourni de numero de suivi. Demande-lui son numero de suivi Colissimo (format: 13 caracteres, commence par 6A, 6C, 8R, etc.). Il se trouve sur l'email de confirmation d'expedition ou sur l'avis de passage."
 
     # 4. Construire le contexte complet (client + historique + incidents + KB)
     full_context = await build_full_context(client, client_id, request.message)

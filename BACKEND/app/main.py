@@ -38,6 +38,9 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 COLISSIMO_API_KEY = os.getenv("COLISSIMO_API_KEY")
+GMAIL_USER = os.getenv("GMAIL_USER")
+GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
+ALERT_EMAILS = [e.strip() for e in (os.getenv("ALERT_EMAILS") or "").split(",") if e.strip()]
 
 # Client Claude
 claude: Optional[anthropic.Anthropic] = None
@@ -293,6 +296,160 @@ async def store_photo_supabase(base64_string: str, client_id: str, incident_type
     except Exception as e:
         logger.error(f"Erreur stockage photo: {e}")
         return ""
+
+
+# ============================================================
+# NOTIFICATIONS EMAIL (Gmail SMTP)
+# ============================================================
+
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+
+async def send_alert_email(subject: str, html_body: str):
+    """Envoie un email d'alerte via Gmail SMTP aux destinataires configures."""
+    if not GMAIL_USER or not GMAIL_APP_PASSWORD or not ALERT_EMAILS:
+        logger.warning("Email non configure (GMAIL_USER, GMAIL_APP_PASSWORD ou ALERT_EMAILS manquant)")
+        return False
+
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["From"] = f"Oliver SAV Vitreflam <{GMAIL_USER}>"
+        msg["To"] = ", ".join(ALERT_EMAILS)
+        msg["Subject"] = subject
+        msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
+            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+            server.sendmail(GMAIL_USER, ALERT_EMAILS, msg.as_string())
+
+        logger.info(f"Email alerte envoye: {subject} -> {ALERT_EMAILS}")
+        return True
+    except Exception as e:
+        logger.error(f"Erreur envoi email: {e}")
+        return False
+
+
+async def notify_new_incident(client_email: str, incident_type: str, description: str,
+                               photo_verdict: str = None, photo_url: str = None,
+                               conversation_summary: str = None):
+    """Envoie une notification email quand un nouvel incident est cree."""
+    type_labels = {
+        "casse_transport": "Casse au transport",
+        "casse_montage": "Casse au montage",
+        "casse_general": "Casse (general)",
+        "probleme_dimensions": "Probleme de dimensions",
+        "retard_livraison": "Retard de livraison",
+        "demande_remboursement": "Demande de remboursement",
+    }
+    type_label = type_labels.get(incident_type, incident_type)
+    date_str = datetime.now().strftime("%d/%m/%Y a %H:%M")
+
+    photo_section = ""
+    if photo_verdict and photo_url:
+        photo_section = f"""
+        <tr>
+            <td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Photo</td>
+            <td style="padding:8px;border-bottom:1px solid #eee;">
+                Verdict: <strong>{photo_verdict}</strong><br>
+                <a href="{photo_url}" style="color:#dc2626;">Voir la photo</a>
+            </td>
+        </tr>"""
+    elif photo_verdict:
+        photo_section = f"""
+        <tr>
+            <td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Photo</td>
+            <td style="padding:8px;border-bottom:1px solid #eee;">Verdict: <strong>{photo_verdict}</strong></td>
+        </tr>"""
+
+    summary_section = ""
+    if conversation_summary:
+        summary_section = f"""
+        <div style="margin-top:16px;padding:12px;background:#f9fafb;border-radius:8px;border-left:3px solid #dc2626;">
+            <strong>Resume de la conversation :</strong><br>
+            <p style="margin:8px 0 0;color:#374151;">{conversation_summary}</p>
+        </div>"""
+
+    html = f"""
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;">
+        <div style="background:#dc2626;color:white;padding:16px 24px;border-radius:8px 8px 0 0;">
+            <h2 style="margin:0;font-size:18px;">Nouvel incident SAV</h2>
+            <p style="margin:4px 0 0;opacity:0.9;font-size:14px;">{date_str}</p>
+        </div>
+        <div style="background:white;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;">
+            <table style="width:100%;border-collapse:collapse;">
+                <tr>
+                    <td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;width:140px;">Type</td>
+                    <td style="padding:8px;border-bottom:1px solid #eee;">{type_label}</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Client</td>
+                    <td style="padding:8px;border-bottom:1px solid #eee;"><a href="mailto:{client_email}" style="color:#dc2626;">{client_email}</a></td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Description</td>
+                    <td style="padding:8px;border-bottom:1px solid #eee;">{description[:300]}</td>
+                </tr>
+                {photo_section}
+            </table>
+            {summary_section}
+            <div style="margin-top:20px;text-align:center;">
+                <a href="mailto:{client_email}?subject=Re: Votre incident SAV Vitreflam" style="display:inline-block;background:#dc2626;color:white;padding:10px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Repondre au client</a>
+            </div>
+        </div>
+        <p style="text-align:center;color:#9ca3af;font-size:12px;margin-top:12px;">Email automatique envoye par Oliver - SAV Vitreflam</p>
+    </div>"""
+
+    subject = f"[SAV] {type_label} - {client_email}"
+    await send_alert_email(subject, html)
+
+
+async def notify_escalation(client_email: str, frustration_score: int, triggers: list,
+                             conversation_summary: str = None):
+    """Envoie une notification URGENTE quand un client est tres frustre."""
+    date_str = datetime.now().strftime("%d/%m/%Y a %H:%M")
+    triggers_str = ", ".join(triggers) if triggers else "Non specifie"
+
+    summary_section = ""
+    if conversation_summary:
+        summary_section = f"""
+        <div style="margin-top:16px;padding:12px;background:#fef2f2;border-radius:8px;border-left:3px solid #b91c1c;">
+            <strong>Resume de la conversation :</strong><br>
+            <p style="margin:8px 0 0;color:#374151;">{conversation_summary}</p>
+        </div>"""
+
+    html = f"""
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;">
+        <div style="background:#b91c1c;color:white;padding:16px 24px;border-radius:8px 8px 0 0;">
+            <h2 style="margin:0;font-size:18px;">URGENT - Client tres mecontent</h2>
+            <p style="margin:4px 0 0;opacity:0.9;font-size:14px;">{date_str}</p>
+        </div>
+        <div style="background:white;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;">
+            <table style="width:100%;border-collapse:collapse;">
+                <tr>
+                    <td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;width:140px;">Client</td>
+                    <td style="padding:8px;border-bottom:1px solid #eee;"><a href="mailto:{client_email}" style="color:#dc2626;">{client_email}</a></td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Frustration</td>
+                    <td style="padding:8px;border-bottom:1px solid #eee;"><strong style="color:#b91c1c;">{frustration_score}/100</strong></td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;">Declencheurs</td>
+                    <td style="padding:8px;border-bottom:1px solid #eee;">{triggers_str}</td>
+                </tr>
+            </table>
+            {summary_section}
+            <div style="margin-top:20px;text-align:center;">
+                <a href="mailto:{client_email}?subject=Suite a votre demande - Vitreflam" style="display:inline-block;background:#b91c1c;color:white;padding:10px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Contacter le client EN URGENCE</a>
+            </div>
+        </div>
+        <p style="text-align:center;color:#9ca3af;font-size:12px;margin-top:12px;">Email automatique envoye par Oliver - SAV Vitreflam</p>
+    </div>"""
+
+    subject = f"[URGENT SAV] Client mecontent ({frustration_score}/100) - {client_email}"
+    await send_alert_email(subject, html)
 
 
 # System prompt pour Oliver - Version 3.0 (post-call Fabien)
@@ -1795,6 +1952,14 @@ async def chat(request: ChatRequest):
         logger.info(f"Frustration detectee: {frustration['level']} (score: {frustration['score']})")
         if frustration["needs_escalation"] and conversation_id:
             needs_escalation = await check_and_escalate(conversation_id, client_id, frustration)
+            if needs_escalation:
+                # Envoyer email URGENT
+                await notify_escalation(
+                    client_email=request.email,
+                    frustration_score=frustration["score"],
+                    triggers=frustration["triggers"],
+                    conversation_summary=request.message[:300]
+                )
 
     # 3c. Mettre a jour le contexte de la conversation (intent, sujet, commande)
     if conversation_id:
@@ -1902,6 +2067,16 @@ async def chat(request: ChatRequest):
                     request.message,
                     image_analysis,
                     photo_url
+                )
+
+                # Notification email pour l'equipe SAV
+                await notify_new_incident(
+                    client_email=request.email,
+                    incident_type=incident_type,
+                    description=request.message,
+                    photo_verdict=image_analysis.get("verdict"),
+                    photo_url=photo_url,
+                    conversation_summary=image_analysis.get("analysis", "")[:300]
                 )
 
                 # Multi-photos : verifier quelles photos on a

@@ -39,7 +39,9 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 COLISSIMO_API_KEY = os.getenv("COLISSIMO_API_KEY")
 GMAIL_USER = os.getenv("GMAIL_USER")
-GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
+GMAIL_CLIENT_ID = os.getenv("GMAIL_CLIENT_ID")
+GMAIL_CLIENT_SECRET = os.getenv("GMAIL_CLIENT_SECRET")
+GMAIL_REFRESH_TOKEN = os.getenv("GMAIL_REFRESH_TOKEN")
 ALERT_EMAILS = [e.strip() for e in (os.getenv("ALERT_EMAILS") or "").split(",") if e.strip()]
 
 # Client Claude
@@ -299,33 +301,62 @@ async def store_photo_supabase(base64_string: str, client_id: str, incident_type
 
 
 # ============================================================
-# NOTIFICATIONS EMAIL (Gmail SMTP)
+# NOTIFICATIONS EMAIL (Gmail API REST OAuth2)
 # ============================================================
 
-import smtplib
+import base64
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
+
+
+def get_gmail_oauth2_token() -> str:
+    """Obtient un access token Gmail via OAuth2 refresh token."""
+    creds = Credentials(
+        token=None,
+        refresh_token=GMAIL_REFRESH_TOKEN,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=GMAIL_CLIENT_ID,
+        client_secret=GMAIL_CLIENT_SECRET,
+    )
+    creds.refresh(Request())
+    return creds.token
 
 
 async def send_alert_email(subject: str, html_body: str):
-    """Envoie un email d'alerte via Gmail SMTP aux destinataires configures."""
-    if not GMAIL_USER or not GMAIL_APP_PASSWORD or not ALERT_EMAILS:
-        logger.warning("Email non configure (GMAIL_USER, GMAIL_APP_PASSWORD ou ALERT_EMAILS manquant)")
+    """Envoie un email d'alerte via Gmail API REST aux destinataires configures."""
+    if not GMAIL_REFRESH_TOKEN or not GMAIL_CLIENT_ID or not ALERT_EMAILS:
+        logger.warning("Email non configure (GMAIL_CLIENT_ID, GMAIL_REFRESH_TOKEN ou ALERT_EMAILS manquant)")
         return False
 
     try:
+        access_token = get_gmail_oauth2_token()
+
         msg = MIMEMultipart("alternative")
         msg["From"] = f"Oliver SAV Vitreflam <{GMAIL_USER}>"
         msg["To"] = ", ".join(ALERT_EMAILS)
         msg["Subject"] = subject
         msg.attach(MIMEText(html_body, "html", "utf-8"))
 
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
-            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-            server.sendmail(GMAIL_USER, ALERT_EMAILS, msg.as_string())
+        raw_message = base64.urlsafe_b64encode(msg.as_bytes()).decode()
 
-        logger.info(f"Email alerte envoye: {subject} -> {ALERT_EMAILS}")
-        return True
+        async with httpx.AsyncClient(timeout=10.0) as client_http:
+            response = await client_http.post(
+                "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json",
+                },
+                json={"raw": raw_message},
+            )
+
+        if response.status_code == 200:
+            logger.info(f"Email alerte envoye: {subject} -> {ALERT_EMAILS}")
+            return True
+        else:
+            logger.error(f"Erreur Gmail API: {response.status_code} - {response.text[:200]}")
+            return False
     except Exception as e:
         logger.error(f"Erreur envoi email: {e}")
         return False
@@ -480,23 +511,25 @@ SYSTEM_PROMPT = """Tu es Oliver, conseiller SAV chez Vitreflam, specialiste du v
 - **Remplacement unique** : Quand tu confirmes un remplacement sous assurance, TOUJOURS preciser : "Ce remplacement est valable **une seule fois** par commande."
 - **Marge de securite dimensions** : Des qu'un client parle de dimensions, de commande ou de mesures, TOUJOURS lui conseiller de prevoir une petite marge de **3 a 5 mm en plus** par rapport a l'ouverture de son appareil. Exemple : "Si votre ouverture mesure 400x300 mm, je vous conseille de commander **403x305 mm** ou **405x305 mm** pour garantir une bonne couverture et etancheite."
 
-## ASSURANCES VITREFLAM (REGLES STRICTES)
+## ASSURANCES VITREFLAM (REGLES STRICTES - CGV Article L)
 
 ### Assurance Transport
-- Delai : **48 heures apres reception** pour signaler
-- Preuves : Photos du verre casse + emballage
-- Resultat : **Remplacement GRATUIT** (une seule fois par commande)
+- Delai : **2 jours apres livraison** pour declarer (passe ce delai = remise 30% en geste commercial)
+- Preuves OBLIGATOIRES (3 photos) : 1) Photo interieure du colis avec le verre casse, 2) Photo de l'emballage exterieur, 3) Photo de l'etiquette de transport
+- Resultat : **Remplacement GRATUIT** (une seule fois par commande, un seul renvoi)
 - IMPORTANT : Si le client n'a PAS verifie en presence du livreur, le lui rappeler fermement
 
 ### Assurance Montage
-- Delai : **8 jours apres reception** pour signaler
-- Preuves : Photos du verre casse
-- Resultat : **Remplacement GRATUIT** (une seule fois par commande)
+- Delai : **8 jours apres livraison** pour declarer (passe ce delai = remise 30% en geste commercial)
+- Preuves : Photos detaillees de la vitre cassee
+- Resultat : **Remplacement GRATUIT** (une seule fois par commande, un seul renvoi)
+- Si pertinent, prodiguer des conseils pour eviter une nouvelle casse
 - IMPORTANT : Questionner sur les conditions du montage
 
 ### Sans assurance - Casse transport
-- Orienter vers **Colissimo** pour reclamation aupres du transporteur
-- Proposer aussi une **remise de 30%** sur la prochaine commande en geste commercial
+- Orienter vers **Colissimo** pour reclamation aupres du transporteur : https://aide.laposte.fr/contact/colissimo
+- Le client doit se soumettre aux directives de Colissimo
+- Vitreflam ne peut PAS intervenir sans assurance transport (PAS de remise, PAS de remplacement)
 - Rappeler l'assurance habitation du client
 
 ### Sans assurance - Casse montage

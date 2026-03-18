@@ -13,14 +13,14 @@
 INSERT INTO knowledge_base (contenu, categorie, sous_categorie, tags, source_document, metadata) VALUES
 
 -- Assurance Transport
-('ASSURANCE CASSE AU TRANSPORT: Si le client a souscrit l''assurance transport ET que la vitre arrive cassee, il doit envoyer une photo interieure du colis avec le verre, de l''emballage exterieur et de l''etiquette de transport. Nous envoyons une nouvelle vitre. DELAI: declaration sous 2 JOURS apres livraison. Offre valable pour UN SEUL renvoi.',
-'assurances', 'transport', ARRAY['casse', 'transport', 'assurance', 'delai'], 'CGV Article L', '{"priorite": 10, "delai_jours": 2, "renvoi_max": 1}'::jsonb),
+('ASSURANCE CASSE AU TRANSPORT: Si le client a souscrit l''assurance transport ET que la vitre arrive cassee a la livraison, il doit envoyer 3 photos: 1) photo interieure du colis avec le verre casse, 2) photo de l''emballage exterieur, 3) photo de l''etiquette de transport. Nous envoyons alors une nouvelle vitre. DELAI: declaration sous 2 JOURS apres livraison. Offre valable pour UN SEUL renvoi par commande. Si le delai de 2 jours est depasse, proposer une remise de 30% en geste commercial.',
+'assurances', 'transport', ARRAY['casse', 'transport', 'assurance', 'delai', 'photos'], 'CGV Article L', '{"priorite": 10, "delai_jours": 2, "renvoi_max": 1, "photos_requises": ["interieur_colis_verre", "emballage_exterieur", "etiquette_transport"]}'::jsonb),
 
-('SANS ASSURANCE TRANSPORT: Si le client n''a PAS souscrit l''assurance transport et que la vitre arrive cassee, il doit contacter directement le transporteur Colissimo (https://aide.laposte.fr/contact/colissimo) et se soumettre a ses directives. Vitreflam ne peut pas intervenir sans assurance.',
-'assurances', 'transport', ARRAY['sans_assurance', 'colissimo', 'reclamation'], 'CGV Article L', '{"priorite": 10, "remplacement": false}'::jsonb),
+('SANS ASSURANCE TRANSPORT: Si le client n''a PAS souscrit l''assurance transport et que la vitre arrive cassee, il doit contacter directement le transporteur Colissimo (https://aide.laposte.fr/contact/colissimo) et se soumettre a ses directives. Vitreflam ne peut PAS intervenir sans assurance transport: PAS de remplacement, PAS de remise. Seul recours: reclamation aupres de Colissimo.',
+'assurances', 'transport', ARRAY['sans_assurance', 'colissimo', 'reclamation'], 'CGV Article L', '{"priorite": 10, "remplacement": false, "remise": false}'::jsonb),
 
 -- Assurance Montage
-('ASSURANCE CASSE AU MONTAGE: Si le client a souscrit l''assurance casse au montage ET qu''il casse la vitre au montage, il doit envoyer des photos detaillees. Nous envoyons une nouvelle vitre et pouvons prodiguer des conseils pour eviter une nouvelle casse. DELAI: declaration sous 8 JOURS apres livraison. Offre valable pour UN SEUL renvoi.',
+('ASSURANCE CASSE AU MONTAGE: Si le client a souscrit l''assurance casse au montage ET qu''il casse la vitre au montage, il doit envoyer des photos detaillees. Nous envoyons une nouvelle vitre et pouvons prodiguer des conseils pour eviter une nouvelle casse. DELAI: declaration sous 8 JOURS apres livraison. Offre valable pour UN SEUL renvoi par commande. Si le delai de 8 jours est depasse, proposer une remise de 30% en geste commercial.',
 'assurances', 'montage', ARRAY['casse', 'montage', 'assurance', 'delai'], 'CGV Article L', '{"priorite": 10, "delai_jours": 8, "renvoi_max": 1}'::jsonb),
 
 ('SANS ASSURANCE MONTAGE: Si le client n''a PAS souscrit l''assurance montage et qu''il casse la vitre au montage, nous ne pouvons pas remplacer gratuitement. Proposer une remise de 30% sur une nouvelle commande.',

@@ -9,7 +9,7 @@
 ├─────────────────────────────────────────────────────────────┤
 │  AVEC assurance + dans delai → Photos → Remplacement (1x)   │
 │  AVEC assurance + HORS delai → Remise 30%                   │
-│  SANS assurance → Contacter Colissimo directement           │
+│  SANS assurance → Contacter Colissimo (pas de remise)        │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -67,8 +67,8 @@
 
 ## Photos Requises
 
-### Pour Assurance Transport
-1. Photo interieur du colis avec le verre casse
+### Pour Assurance Transport (3 photos obligatoires)
+1. Photo interieure du colis avec le verre casse
 2. Photo de l'emballage exterieur
 3. Photo de l'etiquette de transport
 
@@ -114,7 +114,7 @@ Date limite declaration: 23 janvier 23h59
 > "Je suis desole, le delai de declaration de [2/8] jours est depasse. En geste commercial, je peux vous proposer une remise de 30% sur une nouvelle commande."
 
 ### Client SANS assurance transport
-> "Sans assurance transport, je vous invite a contacter directement Colissimo pour effectuer une reclamation: https://aide.laposte.fr/contact/colissimo"
+> "Sans assurance transport, nous ne pouvons malheureusement pas intervenir. Je vous invite a contacter directement Colissimo pour effectuer une reclamation: https://aide.laposte.fr/contact/colissimo"
 
 ### Client SANS assurance montage
 > "La casse au montage est generalement due aux pattes de fixation trop serrees. Sans assurance montage, je peux vous proposer une remise de 30% sur une nouvelle commande."

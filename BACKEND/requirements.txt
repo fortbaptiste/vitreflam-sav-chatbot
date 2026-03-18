@@ -5,3 +5,4 @@ anthropic>=0.18.0
 supabase>=2.0.0
 httpx>=0.24.0,<0.26
 Pillow>=10.0.0
+google-auth>=2.0.0

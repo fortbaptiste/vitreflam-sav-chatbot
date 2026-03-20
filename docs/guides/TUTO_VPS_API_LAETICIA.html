@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guide VPS & Clé API — Vitreflam</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        'display': ['Space Grotesk', 'sans-serif'],
+        'mono': ['Space Mono', 'monospace'],
+        'body': ['Inter', 'sans-serif'],
+      },
+      colors: {
+        'flame': { 50:'#FFF5F5', 100:'#FED7D7', 200:'#FEB2B2', 300:'#FC8181', 400:'#F56565', 500:'#DC2626', 600:'#C53030', 700:'#9B2C2C', 800:'#822727', 900:'#63171B' },
+        'sun': { 100:'#FEF9C3', 200:'#FEF08A', 300:'#FDE047', 400:'#FACC15', 500:'#EAB308' },
+        'purple': { 100:'#F3E8FF', 200:'#E9D5FF', 300:'#D8B4FE', 400:'#C084FC', 500:'#A855F7', 600:'#7C3AED' },
+        'teal': { 100:'#CCFBF1', 200:'#99F6E4', 300:'#5EEAD4', 400:'#2DD4BF', 500:'#14B8A6' },
+        'ink': '#1a1a1a',
+        'paper': '#FFFBF0',
+        'card': '#FFFFFF',
+      },
+      boxShadow: {
+        'brutal': '4px 4px 0px 0px #1a1a1a',
+        'brutal-sm': '2px 2px 0px 0px #1a1a1a',
+        'brutal-lg': '6px 6px 0px 0px #1a1a1a',
+        'brutal-xl': '8px 8px 0px 0px #1a1a1a',
+        'brutal-red': '4px 4px 0px 0px #DC2626',
+        'brutal-yellow': '4px 4px 0px 0px #EAB308',
+        'brutal-purple': '4px 4px 0px 0px #7C3AED',
+        'brutal-teal': '4px 4px 0px 0px #14B8A6',
+      },
+    }
+  }
+}
+</script>
+<style>
+* { box-sizing: border-box; }
+html { background: #FFFBF0; }
+body { font-family: 'Inter', sans-serif; color: #1a1a1a; background: #FFFBF0; overflow-x: hidden; }
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: #FFFBF0; }
+::-webkit-scrollbar-thumb { background: #1a1a1a; border: 2px solid #FFFBF0; }
+
+#progress-bar { transition: width 0.1s linear; }
+
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes slideUp { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideLeft { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+@keyframes slideRight { from{opacity:0;transform:translateX(-40px)} to{opacity:1;transform:translateX(0)} }
+@keyframes scaleIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+@keyframes pulse-border { 0%,100%{border-color:#1a1a1a} 50%{border-color:#DC2626} }
+@keyframes wiggle { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-3deg)} 75%{transform:rotate(3deg)} }
+@keyframes typewriter { from{width:0} to{width:100%} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+@keyframes confetti-fall { 0%{transform:translateY(-100vh) rotate(0deg);opacity:1} 100%{transform:translateY(100vh) rotate(720deg);opacity:0} }
+@keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+@keyframes glow { 0%,100%{box-shadow:4px 4px 0px 0px #1a1a1a} 50%{box-shadow:4px 4px 20px 0px rgba(220,38,38,0.3), 4px 4px 0px 0px #1a1a1a} }
+@keyframes dash { to { stroke-dashoffset: 0; } }
+@keyframes check-pop { 0%{transform:scale(0)} 50%{transform:scale(1.3)} 100%{transform:scale(1)} }
+@keyframes bounce-in { 0%{transform:scale(0.3);opacity:0} 50%{transform:scale(1.05)} 70%{transform:scale(0.9)} 100%{transform:scale(1);opacity:1} }
+@keyframes gradient-shift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 10%,30%,50%,70%,90%{transform:translateX(-4px)} 20%,40%,60%,80%{transform:translateX(4px)} }
+@keyframes sparkle { 0%,100%{opacity:0;transform:scale(0)} 50%{opacity:1;transform:scale(1)} }
+@keyframes typing-dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+@keyframes slide-in-right { from{transform:translateX(100px);opacity:0} to{transform:translateX(0);opacity:1} }
+@keyframes ribbon-wave { 0%,100%{transform:rotate(-2deg)} 50%{transform:rotate(2deg)} }
+
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-wiggle { animation: wiggle 0.5s ease-in-out; }
+.animate-glow { animation: glow 2s ease-in-out infinite; }
+.animate-gradient { background-size: 200% 200%; animation: gradient-shift 4s ease infinite; }
+.animate-ribbon { animation: ribbon-wave 2s ease-in-out infinite; }
+
+.reveal { opacity: 0; transform: translateY(40px); transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-left { opacity: 0; transform: translateX(-40px); transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
+.reveal-left.visible { opacity: 1; transform: translateX(0); }
+.reveal-right { opacity: 0; transform: translateX(40px); transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1); }
+.reveal-right.visible { opacity: 1; transform: translateX(0); }
+.reveal-scale { opacity: 0; transform: scale(0.9); transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+.reveal-scale.visible { opacity: 1; transform: scale(1); }
+
+.stagger-children .reveal:nth-child(1) { transition-delay: 0.05s; }
+.stagger-children .reveal:nth-child(2) { transition-delay: 0.1s; }
+.stagger-children .reveal:nth-child(3) { transition-delay: 0.15s; }
+.stagger-children .reveal:nth-child(4) { transition-delay: 0.2s; }
+.stagger-children .reveal:nth-child(5) { transition-delay: 0.25s; }
+.stagger-children .reveal:nth-child(6) { transition-delay: 0.3s; }
+
+.card-brutal {
+  background: white;
+  border: 3px solid #1a1a1a;
+  box-shadow: 4px 4px 0px 0px #1a1a1a;
+  transition: all 0.2s ease;
+}
+.card-brutal:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px #1a1a1a;
+}
+
+.btn-brutal {
+  border: 3px solid #1a1a1a;
+  box-shadow: 4px 4px 0px 0px #1a1a1a;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.btn-brutal:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px 0px #1a1a1a; }
+.btn-brutal:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px 0px #1a1a1a; }
+
+.step-number {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  border: 3px solid #1a1a1a;
+  box-shadow: 3px 3px 0px 0px #1a1a1a;
+  transition: all 0.3s ease;
+}
+
+.step-check {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #1a1a1a;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.step-check.checked {
+  background: #22C55E;
+  animation: check-pop 0.3s ease;
+}
+.step-check.checked svg { display: block; }
+.step-check svg { display: none; }
+
+.tooltip-brutal { position: relative; }
+.tooltip-brutal::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: #1a1a1a;
+  color: white;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  border: 2px solid #1a1a1a;
+  font-family: 'Space Mono', monospace;
+}
+.tooltip-brutal:hover::after { opacity: 1; transform: translateX(-50%) scale(1); }
+
+.marquee-track { display: flex; width: max-content; animation: marquee 30s linear infinite; }
+.marquee-track:hover { animation-play-state: paused; }
+
+.confetti-piece {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  top: -20px;
+  z-index: 9999;
+  animation: confetti-fall 3s linear forwards;
+}
+
+.warning-brutal {
+  background: #FEF9C3;
+  border: 3px solid #1a1a1a;
+  border-left: 6px solid #EAB308;
+}
+
+.success-brutal {
+  background: #F0FDF4;
+  border: 3px solid #1a1a1a;
+  border-left: 6px solid #22C55E;
+}
+
+.info-brutal {
+  background: #F3E8FF;
+  border: 3px solid #1a1a1a;
+  border-left: 6px solid #7C3AED;
+}
+
+.nav-link { position: relative; }
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background: #DC2626;
+  transition: width 0.2s ease;
+}
+.nav-link:hover::after, .nav-link.active::after { width: 100%; }
+
+.table-brutal { border-collapse: separate; border-spacing: 0; }
+.table-brutal th { background: #1a1a1a; color: white; font-family: 'Space Grotesk', sans-serif; }
+.table-brutal td, .table-brutal th { border: 2px solid #1a1a1a; padding: 12px 16px; }
+.table-brutal tr:nth-child(even) td { background: #F3E8FF; }
+.table-brutal tr:hover td { background: #FED7D7; transition: background 0.2s; }
+
+.ping-dot { position: relative; }
+.ping-dot::before {
+  content: '';
+  position: absolute;
+  top: -2px; right: -2px;
+  width: 10px; height: 10px;
+  background: #22C55E;
+  border-radius: 50%;
+  animation: ping 1.5s infinite;
+}
+@keyframes ping { 0%{transform:scale(1);opacity:1} 100%{transform:scale(2);opacity:0} }
+
+.img-brutal {
+  border: 3px solid #1a1a1a;
+  box-shadow: 6px 6px 0px 0px #1a1a1a;
+  transition: all 0.3s ease;
+  cursor: zoom-in;
+}
+.img-brutal:hover {
+  transform: translate(-3px, -3px) scale(1.02);
+  box-shadow: 9px 9px 0px 0px #1a1a1a;
+}
+
+.laeticia-wave { display: inline-block; cursor: default; }
+.laeticia-wave.waving { animation: wiggle 0.4s ease-in-out 3; }
+
+/* Image lightbox */
+.lightbox {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+  padding: 2rem;
+}
+.lightbox.active { display: flex; }
+.lightbox img {
+  max-width: 95%;
+  max-height: 95vh;
+  border: 4px solid white;
+  box-shadow: 0 0 60px rgba(0,0,0,0.5);
+}
+
+/* Section divider */
+.section-divider {
+  height: 4px;
+  background: repeating-linear-gradient(90deg, #1a1a1a 0, #1a1a1a 8px, transparent 8px, transparent 16px);
+}
+
+/* Floating particles */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.15;
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  .card-brutal { box-shadow: none; border: 1px solid #ccc; }
+  .reveal, .reveal-left, .reveal-right, .reveal-scale { opacity: 1 !important; transform: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" class="lightbox" onclick="this.classList.remove('active')">
+  <img id="lightbox-img" src="" alt="Zoom">
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="fixed top-0 left-0 w-full h-1.5 bg-gray-200 z-[100] no-print">
+  <div id="progress-bar" class="h-full bg-gradient-to-r from-purple-500 via-flame-500 to-sun-400 animate-gradient" style="width:0%"></div>
+</div>
+
+<!-- ================================================================= -->
+<!--                         NAVIGATION                                 -->
+<!-- ================================================================= -->
+<nav class="fixed top-1.5 left-0 w-full bg-paper/95 backdrop-blur-sm border-b-3 border-ink z-50 no-print" style="border-bottom: 3px solid #1a1a1a;">
+  <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+    <a href="#hero" class="font-display font-bold text-lg flex items-center gap-2">
+      <span class="w-8 h-8 bg-flame-500 border-2 border-ink flex items-center justify-center text-white text-sm">V</span>
+      <span class="hidden sm:inline">Vitreflam</span>
+    </a>
+    <div class="flex items-center gap-1 sm:gap-4 text-sm font-medium">
+      <a href="#partie-vps" class="nav-link px-2 py-1 hover:text-purple-600 transition-colors hidden md:block">VPS</a>
+      <a href="#partie-api" class="nav-link px-2 py-1 hover:text-flame-500 transition-colors hidden md:block">Clé API</a>
+      <a href="#recapitulatif" class="nav-link px-2 py-1 hover:text-teal-500 transition-colors hidden md:block">Récap</a>
+      <a href="#faq" class="nav-link px-2 py-1 hover:text-sun-500 transition-colors hidden md:block">FAQ</a>
+      <div id="step-counter" class="btn-brutal bg-sun-200 px-3 py-1 font-mono text-xs font-bold">
+        <span id="checked-count">0</span>/14 ✓
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ================================================================= -->
+<!--              SECTION 1 — HERO / BIENVENUE                         -->
+<!-- ================================================================= -->
+<section id="hero" class="min-h-screen flex items-center justify-center relative px-4 pt-20 pb-16 overflow-hidden">
+  <!-- Floating shapes -->
+  <div class="absolute top-20 left-10 w-16 h-16 bg-purple-200 border-3 border-ink rotate-12 animate-float opacity-40" style="border:3px solid #1a1a1a"></div>
+  <div class="absolute top-40 right-16 w-12 h-12 bg-sun-200 border-3 border-ink -rotate-6 animate-float opacity-40" style="border:3px solid #1a1a1a;animation-delay:1s"></div>
+  <div class="absolute bottom-32 left-20 w-10 h-10 bg-flame-200 border-3 border-ink rotate-45 animate-float opacity-30" style="border:3px solid #1a1a1a;animation-delay:0.5s"></div>
+  <div class="absolute bottom-40 right-10 w-14 h-14 bg-teal-200 border-3 border-ink -rotate-12 animate-float opacity-30" style="border:3px solid #1a1a1a;animation-delay:1.5s"></div>
+
+  <div class="max-w-4xl mx-auto text-center">
+    <div class="reveal mb-6">
+      <span class="inline-block bg-purple-200 border-3 border-ink px-4 py-2 font-mono text-sm font-bold shadow-brutal-sm rotate-[-1deg]" style="border:3px solid #1a1a1a;box-shadow:2px 2px 0 #1a1a1a">
+        GUIDE SPÉCIAL LAETICIA
+      </span>
+    </div>
+
+    <h1 class="reveal font-display text-5xl sm:text-7xl md:text-8xl font-bold leading-[0.95] mb-8">
+      <span class="block">Serveur VPS</span>
+      <span class="block text-flame-500">&</span>
+      <span class="block">Clé API Claude</span>
+    </h1>
+
+    <p class="reveal text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto mb-10 font-body leading-relaxed">
+      Salut <span class="laeticia-wave font-bold text-purple-600 cursor-pointer" onclick="this.classList.add('waving');setTimeout(()=>this.classList.remove('waving'),1500)" data-clicks="0">Laeticia</span> !
+      Ce petit guide va t'accompagner pas à pas pour deux choses : <strong>commander un serveur VPS chez Hostinger</strong> et <strong>créer une clé API Anthropic</strong> (pour Claude, l'intelligence artificielle qu'on utilise).
+      T'inquiète, c'est super simple, on y va ensemble !
+    </p>
+
+    <div class="reveal flex flex-col sm:flex-row gap-4 justify-center items-center">
+      <a href="#partie-vps" class="btn-brutal bg-purple-300 text-ink font-display font-bold text-lg px-8 py-4 inline-flex items-center gap-3 hover:bg-purple-400">
+        <span class="text-2xl">🖥️</span> Partie 1 : Le VPS
+      </a>
+      <a href="#partie-api" class="btn-brutal bg-flame-300 text-ink font-display font-bold text-lg px-8 py-4 inline-flex items-center gap-3 hover:bg-flame-400">
+        <span class="text-2xl">🔑</span> Partie 2 : La Clé API
+      </a>
+    </div>
+
+    <div class="reveal mt-12 text-sm text-gray-400 font-mono">
+      Temps estimé : ~15 minutes par partie &middot; Difficulté : Facile
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 2 — C'EST QUOI UN VPS ?                      -->
+<!-- ================================================================= -->
+<section id="partie-vps" class="py-4">
+  <div class="section-divider max-w-6xl mx-auto"></div>
+</section>
+
+<section id="s2-cest-quoi-vps" class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+    <div class="reveal mb-8">
+      <span class="inline-block bg-purple-500 text-white border-3 border-ink px-4 py-2 font-display font-bold text-sm shadow-brutal-sm" style="border:3px solid #1a1a1a;box-shadow:2px 2px 0 #1a1a1a">
+        PARTIE 1 — LE SERVEUR VPS
+      </span>
+    </div>
+
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-purple-600">Section 1</span> — C'est quoi un VPS, concrètement ?
+    </h2>
+
+    <div class="reveal card-brutal p-8 mb-8">
+      <div class="flex items-start gap-4 mb-6">
+        <span class="text-4xl">🏠</span>
+        <div>
+          <h3 class="font-display font-bold text-xl mb-2">Imagine un appartement dans un immeuble</h3>
+          <p class="text-gray-600 leading-relaxed">
+            Un <strong>VPS</strong> (Virtual Private Server), c'est comme si tu louais un <strong>appartement dans un immeuble</strong>. L'immeuble, c'est un gros serveur physique. Ton appartement, c'est ton espace à toi, isolé des autres. Tu as ta propre clé, tes propres murs, ton propre espace. Personne d'autre ne peut y accéder.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid sm:grid-cols-3 gap-4 mt-6">
+        <div class="bg-purple-100 border-2 border-ink p-4 text-center" style="border:2px solid #1a1a1a">
+          <span class="text-3xl block mb-2">💻</span>
+          <p class="font-bold font-display text-sm">Ton propre ordinateur</p>
+          <p class="text-xs text-gray-500 mt-1">Allumé 24h/24, accessible de partout</p>
+        </div>
+        <div class="bg-sun-100 border-2 border-ink p-4 text-center" style="border:2px solid #1a1a1a">
+          <span class="text-3xl block mb-2">🌍</span>
+          <p class="font-bold font-display text-sm">Toujours en ligne</p>
+          <p class="text-xs text-gray-500 mt-1">Le site Vitreflam tourne dessus</p>
+        </div>
+        <div class="bg-teal-100 border-2 border-ink p-4 text-center" style="border:2px solid #1a1a1a">
+          <span class="text-3xl block mb-2">🔒</span>
+          <p class="font-bold font-display text-sm">Sécurisé</p>
+          <p class="text-xs text-gray-500 mt-1">Rien que pour nous</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal info-brutal p-6">
+      <p class="font-bold font-display mb-1">💡 En résumé</p>
+      <p class="text-gray-700">C'est là-dessus que le site Vitreflam va tourner. On a besoin d'un serveur pour que le site soit accessible sur Internet. C'est Fabien qui s'occupe de toute la partie technique, toi tu as juste besoin de passer la commande.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 3 — POURQUOI HOSTINGER ?                     -->
+<!-- ================================================================= -->
+<section id="s3-pourquoi-hostinger" class="py-20 px-4 bg-purple-100/30">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-purple-600">Section 2</span> — Pourquoi Hostinger ?
+    </h2>
+
+    <div class="reveal card-brutal p-8 mb-8">
+      <p class="text-lg text-gray-700 leading-relaxed mb-6">
+        Hostinger, c'est un <strong>hébergeur web</strong> (une entreprise qui loue des serveurs). On l'a choisi parce que :
+      </p>
+
+      <div class="space-y-4">
+        <div class="flex items-start gap-3">
+          <span class="w-10 h-10 bg-green-400 border-2 border-ink flex items-center justify-center text-white font-bold flex-shrink-0" style="border:2px solid #1a1a1a">✓</span>
+          <div>
+            <p class="font-bold">Très bon rapport qualité/prix</p>
+            <p class="text-gray-500 text-sm">Beaucoup moins cher que OVH, AWS ou DigitalOcean pour ce qu'on en fait</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="w-10 h-10 bg-green-400 border-2 border-ink flex items-center justify-center text-white font-bold flex-shrink-0" style="border:2px solid #1a1a1a">✓</span>
+          <div>
+            <p class="font-bold">Interface simple et en français</p>
+            <p class="text-gray-500 text-sm">Pas besoin d'être une experte en informatique</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="w-10 h-10 bg-green-400 border-2 border-ink flex items-center justify-center text-white font-bold flex-shrink-0" style="border:2px solid #1a1a1a">✓</span>
+          <div>
+            <p class="font-bold">Serveurs fiables et performants</p>
+            <p class="text-gray-500 text-sm">Le site sera rapide et toujours disponible</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="w-10 h-10 bg-green-400 border-2 border-ink flex items-center justify-center text-white font-bold flex-shrink-0" style="border:2px solid #1a1a1a">✓</span>
+          <div>
+            <p class="font-bold">Support client 24h/24</p>
+            <p class="text-gray-500 text-sm">En cas de problème, ils répondent vite</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 4 — CRÉER UN COMPTE HOSTINGER                -->
+<!-- ================================================================= -->
+<section id="s4-creer-compte-hostinger" class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-purple-600">Section 3</span> — Créer ton compte Hostinger
+    </h2>
+
+    <div class="space-y-6">
+      <!-- Step 1 -->
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-purple-300 text-ink flex-shrink-0">1</div>
+          <div class="flex-1">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-display font-bold text-lg mb-2">Va sur le site Hostinger</h3>
+                <p class="text-gray-600 mb-4">Ouvre ton navigateur et clique sur le lien ci-dessous. Ça t'amène directement sur la page des VPS :</p>
+                <a href="https://www.hostinger.com/fr/vps" target="_blank" class="btn-brutal bg-purple-200 px-5 py-3 font-mono text-sm font-bold inline-flex items-center gap-2 hover:bg-purple-300">
+                  🔗 hostinger.com/fr/vps
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+              </div>
+              <div class="step-check" onclick="toggleCheck(this)" data-step="1">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-purple-300 text-ink flex-shrink-0">2</div>
+          <div class="flex-1">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-display font-bold text-lg mb-2">Crée un compte (si tu n'en as pas)</h3>
+                <p class="text-gray-600 mb-3">En haut à droite, tu vas voir un bouton <strong>"Mon compte"</strong> ou <strong>"S'inscrire"</strong>. Clique dessus.</p>
+                <div class="bg-gray-50 border-2 border-ink p-4 space-y-2 text-sm" style="border:2px solid #1a1a1a">
+                  <p>📧 <strong>Email :</strong> Entre ton adresse email</p>
+                  <p>🔑 <strong>Mot de passe :</strong> Choisis un mot de passe solide (mélange lettres, chiffres, caractères spéciaux)</p>
+                  <p>👤 Tu peux aussi t'inscrire avec Google ou Facebook si tu préfères, c'est plus rapide</p>
+                </div>
+              </div>
+              <div class="step-check" onclick="toggleCheck(this)" data-step="2">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-purple-300 text-ink flex-shrink-0">3</div>
+          <div class="flex-1">
+            <h3 class="font-display font-bold text-lg mb-2">Confirme ton email</h3>
+            <p class="text-gray-600">Tu vas recevoir un email de confirmation. Va dans ta boîte mail, ouvre l'email d'Hostinger et clique sur le lien de vérification. C'est classique, comme pour n'importe quel site.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal warning-brutal p-5 mt-6">
+      <p class="font-bold font-display mb-1">⚠️ Note ton mot de passe !</p>
+      <p class="text-gray-700 text-sm">Garde bien ton email et ton mot de passe Hostinger quelque part, on en aura besoin plus tard pour se connecter au panneau de gestion du serveur.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 5 — TROUVER LE PLAN KVM 2                    -->
+<!-- ================================================================= -->
+<section id="s5-plan-kvm2" class="py-20 px-4 bg-purple-100/30">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-purple-600">Section 4</span> — Trouver le plan VPS KVM 2
+    </h2>
+
+    <p class="reveal text-lg text-gray-600 mb-8">
+      Une fois connectée, retourne sur la page des VPS. Tu vas voir cette page avec les différentes offres :
+    </p>
+
+    <!-- Screenshot -->
+    <div class="reveal mb-8">
+      <div class="relative">
+        <img src="img/hostinger-plans-vps.png" alt="Page des plans VPS Hostinger" class="img-brutal w-full" onclick="openLightbox(this.src)">
+        <div class="absolute top-3 right-3 bg-purple-500 text-white border-2 border-ink px-3 py-1 font-mono text-xs font-bold" style="border:2px solid #1a1a1a">
+          📸 Clique pour agrandir
+        </div>
+      </div>
+      <p class="text-sm text-gray-500 mt-3 font-mono text-center">La page des plans VPS — on veut le <strong>KVM 2</strong> (encadré en vert sur l'image)</p>
+    </div>
+
+    <div class="reveal card-brutal p-8">
+      <h3 class="font-display font-bold text-xl mb-4">Ce qu'il faut repérer sur cette page :</h3>
+      <div class="space-y-4">
+        <div class="flex items-start gap-3">
+          <span class="text-2xl">👉</span>
+          <div>
+            <p class="font-bold">Tu vois 4 plans : KVM 1, KVM 2, KVM 4, KVM 8</p>
+            <p class="text-gray-500 text-sm">Nous, c'est le <strong class="text-purple-600">KVM 2</strong> qui nous intéresse — c'est celui avec le badge "Le plus populaire"</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-2xl">👉</span>
+          <div>
+            <p class="font-bold">Clique sur "Sélectionner" sous le KVM 2</p>
+            <p class="text-gray-500 text-sm">C'est le bouton violet en dessous du prix</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 6 — COMPRENDRE LES SPECS DU KVM 2            -->
+<!-- ================================================================= -->
+<section id="s6-specs-kvm2" class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-purple-600">Section 5</span> — Ce que contient le KVM 2
+    </h2>
+
+    <p class="reveal text-lg text-gray-600 mb-8">
+      Pas besoin de comprendre tous les détails techniques, mais voilà ce que tu obtiens avec le KVM 2 — c'est largement suffisant pour Vitreflam :
+    </p>
+
+    <div class="reveal overflow-x-auto mb-8">
+      <table class="table-brutal w-full text-sm">
+        <thead>
+          <tr>
+            <th class="text-left">Caractéristique</th>
+            <th class="text-left">KVM 2</th>
+            <th class="text-left">C'est quoi ?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-bold">Processeur (vCPU)</td>
+            <td>2 coeurs</td>
+            <td class="text-gray-500">Le cerveau du serveur — 2 c'est bien</td>
+          </tr>
+          <tr>
+            <td class="font-bold">Mémoire (RAM)</td>
+            <td>8 Go</td>
+            <td class="text-gray-500">La mémoire vive — parfait pour notre usage</td>
+          </tr>
+          <tr>
+            <td class="font-bold">Stockage (NVMe)</td>
+            <td>100 Go</td>
+            <td class="text-gray-500">L'espace disque — c'est plus que suffisant</td>
+          </tr>
+          <tr>
+            <td class="font-bold">Bande passante</td>
+            <td>8 To</td>
+            <td class="text-gray-500">La quantité de données qui peuvent transiter — largement assez</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="reveal success-brutal p-5">
+      <p class="font-bold font-display mb-1">✅ C'est parfait pour nous</p>
+      <p class="text-gray-700 text-sm">Le KVM 2, c'est le juste milieu : assez puissant pour faire tourner le site Vitreflam, le chatbot, les emails automatiques et tout le reste, sans payer trop cher.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 7 — LES TARIFS                               -->
+<!-- ================================================================= -->
+<section id="s7-tarifs" class="py-20 px-4 bg-purple-100/30">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-purple-600">Section 6</span> — Les tarifs : combien ça coûte ?
+    </h2>
+
+    <p class="reveal text-lg text-gray-600 mb-8">
+      Voilà les prix pour le KVM 2. <strong>C'est à Fabien et toi de voir</strong> si vous préférez partir sur 1 mois, 6 mois ou 12 mois. Plus la durée est longue, moins c'est cher par mois :
+    </p>
+
+    <div class="reveal grid sm:grid-cols-3 gap-6 mb-8 stagger-children">
+      <!-- 1 mois -->
+      <div class="reveal card-brutal p-6 text-center relative">
+        <div class="font-display font-bold text-sm text-gray-400 mb-2">ENGAGEMENT</div>
+        <div class="font-display font-bold text-3xl mb-1">1 mois</div>
+        <div class="font-display font-bold text-4xl text-purple-600 mb-2">9,99€<span class="text-lg text-gray-400">/mois</span></div>
+        <div class="text-sm text-gray-500">Total : <strong>9,99€</strong></div>
+        <div class="mt-3 bg-gray-100 border-2 border-ink px-3 py-1 text-xs font-mono inline-block" style="border:2px solid #1a1a1a">
+          Sans engagement
+        </div>
+      </div>
+
+      <!-- 6 mois -->
+      <div class="reveal card-brutal p-6 text-center relative border-purple-500" style="border-color:#A855F7">
+        <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white px-3 py-1 text-xs font-bold font-display border-2 border-ink" style="border:2px solid #1a1a1a">
+          BON COMPROMIS
+        </div>
+        <div class="font-display font-bold text-sm text-gray-400 mb-2 mt-2">ENGAGEMENT</div>
+        <div class="font-display font-bold text-3xl mb-1">6 mois</div>
+        <div class="font-display font-bold text-4xl text-purple-600 mb-2">~8,99€<span class="text-lg text-gray-400">/mois</span></div>
+        <div class="text-sm text-gray-500">Total : <strong>~53,94€</strong></div>
+        <div class="mt-3 bg-purple-100 border-2 border-ink px-3 py-1 text-xs font-mono inline-block" style="border:2px solid #1a1a1a">
+          Économie ~10%
+        </div>
+      </div>
+
+      <!-- 12 mois -->
+      <div class="reveal card-brutal p-6 text-center relative">
+        <div class="font-display font-bold text-sm text-gray-400 mb-2">ENGAGEMENT</div>
+        <div class="font-display font-bold text-3xl mb-1">12 mois</div>
+        <div class="font-display font-bold text-4xl text-purple-600 mb-2">~7,99€<span class="text-lg text-gray-400">/mois</span></div>
+        <div class="text-sm text-gray-500">Total : <strong>~95,88€</strong></div>
+        <div class="mt-3 bg-green-100 border-2 border-ink px-3 py-1 text-xs font-mono inline-block" style="border:2px solid #1a1a1a">
+          Meilleur prix/mois
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal info-brutal p-5">
+      <p class="font-bold font-display mb-1">💬 Notre conseil</p>
+      <p class="text-gray-700 text-sm">Discutez-en ensemble, Fabien et toi. Si vous voulez d'abord tester pendant 1 mois pour voir si tout va bien, c'est possible. Sinon, 6 ou 12 mois c'est plus économique. Les prix exacts peuvent varier selon les promotions en cours sur Hostinger.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 8 — CONFIGURER LA COMMANDE                   -->
+<!-- ================================================================= -->
+<section id="s8-configurer-commande" class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-purple-600">Section 7</span> — Configurer ta commande
+    </h2>
+
+    <p class="reveal text-lg text-gray-600 mb-8">
+      Après avoir cliqué sur "Sélectionner" sous le KVM 2, tu arrives sur la page de configuration. Voilà à quoi elle ressemble :
+    </p>
+
+    <!-- Screenshot checkout -->
+    <div class="reveal mb-8">
+      <div class="relative">
+        <img src="img/hostinger-checkout-kvm2.png" alt="Page de configuration KVM 2" class="img-brutal w-full" onclick="openLightbox(this.src)">
+        <div class="absolute top-3 right-3 bg-purple-500 text-white border-2 border-ink px-3 py-1 font-mono text-xs font-bold" style="border:2px solid #1a1a1a">
+          📸 Clique pour agrandir
+        </div>
+      </div>
+      <p class="text-sm text-gray-500 mt-3 font-mono text-center">La page de commande du Pack KVM 2</p>
+    </div>
+
+    <div class="space-y-6">
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-purple-300 text-ink flex-shrink-0">1</div>
+          <div class="flex-1">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-display font-bold text-lg mb-2">Choisis la durée d'abonnement</h3>
+                <p class="text-gray-600 mb-3">En haut de la page, tu vois <strong>"Durée"</strong>. C'est là que tu choisis entre 1 mois, 6 mois, 12 mois, etc.</p>
+                <p class="text-gray-600">Sur la capture, c'est réglé sur <strong>1 mois à 9,99€/mois</strong>. Tu peux changer en cliquant sur les autres durées.</p>
+              </div>
+              <div class="step-check" onclick="toggleCheck(this)" data-step="3">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-purple-300 text-ink flex-shrink-0">2</div>
+          <div class="flex-1">
+            <h3 class="font-display font-bold text-lg mb-2">Sauvegarde automatique (optionnel)</h3>
+            <p class="text-gray-600">Tu verras une option <strong>"Sauvegarde automatique quotidienne"</strong> à 5,99€/mois. C'est recommandé mais pas obligatoire. Fabien pourra configurer des sauvegardes gratuitement de son côté si besoin.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-purple-300 text-ink flex-shrink-0">3</div>
+          <div class="flex-1">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-display font-bold text-lg mb-2">Choisis l'emplacement du serveur</h3>
+                <p class="text-gray-600">En bas, tu vois <strong>"Choix de l'emplacement du serveur"</strong>. Choisis <strong>France</strong> ou <strong>Allemagne</strong> (ce sont les plus proches de nous, donc le site sera rapide).</p>
+              </div>
+              <div class="step-check" onclick="toggleCheck(this)" data-step="4">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 9 — RÉCAP DE COMMANDE ET PAIEMENT            -->
+<!-- ================================================================= -->
+<section id="s9-paiement" class="py-20 px-4 bg-purple-100/30">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-purple-600">Section 8</span> — Le récapitulatif et le paiement
+    </h2>
+
+    <div class="reveal card-brutal p-8 mb-8">
+      <h3 class="font-display font-bold text-xl mb-4">Sur la droite de la page, tu vois le récapitulatif :</h3>
+      <div class="bg-gray-50 border-2 border-ink p-6 font-mono text-sm space-y-2" style="border:2px solid #1a1a1a">
+        <div class="flex justify-between"><span>Pack KVM 2</span><span class="font-bold">9,99€</span></div>
+        <div class="border-t-2 border-dashed border-gray-300 my-2"></div>
+        <div class="flex justify-between font-bold text-lg"><span>Total</span><span class="text-purple-600">9,99€</span></div>
+        <p class="text-xs text-gray-400 mt-2">* Prix pour 1 mois — changera selon la durée choisie</p>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-sun-300 text-ink flex-shrink-0">💳</div>
+          <div class="flex-1">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-display font-bold text-lg mb-2">Clique sur "Continuer" puis paye</h3>
+                <p class="text-gray-600 mb-3">Hostinger accepte :</p>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                  <div class="flex items-center gap-2"><span>💳</span> Carte bancaire (Visa, Mastercard)</div>
+                  <div class="flex items-center gap-2"><span>🅿️</span> PayPal</div>
+                  <div class="flex items-center gap-2"><span>🪙</span> Google Pay / Apple Pay</div>
+                  <div class="flex items-center gap-2"><span>🏦</span> Virement bancaire</div>
+                </div>
+              </div>
+              <div class="step-check" onclick="toggleCheck(this)" data-step="5">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal warning-brutal p-5 mt-6">
+      <p class="font-bold font-display mb-1">⚠️ Code promo</p>
+      <p class="text-gray-700 text-sm">Tu verras un champ <strong>"Vous avez un code promo ?"</strong> — si tu en as un, entre-le ici avant de payer. Sinon, laisse vide et continue.</p>
+    </div>
+
+    <div class="reveal success-brutal p-5 mt-4">
+      <p class="font-bold font-display mb-1">🎉 Garantie</p>
+      <p class="text-gray-700 text-sm">Hostinger offre une garantie satisfait ou remboursé de 30 jours. Donc si jamais ça ne convient pas, tu peux être remboursée.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 10 — APRÈS LE PAIEMENT                       -->
+<!-- ================================================================= -->
+<section id="s10-apres-paiement" class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-purple-600">Section 9</span> — Après le paiement
+    </h2>
+
+    <div class="reveal card-brutal p-8 mb-8">
+      <h3 class="font-display font-bold text-xl mb-6">Ce qui va se passer :</h3>
+
+      <div class="space-y-6">
+        <div class="flex items-start gap-4">
+          <span class="w-12 h-12 bg-green-300 border-2 border-ink flex items-center justify-center text-xl font-bold flex-shrink-0" style="border:2px solid #1a1a1a">1</span>
+          <div>
+            <p class="font-bold text-lg">Tu reçois un email de confirmation</p>
+            <p class="text-gray-500">Hostinger te confirme que le paiement est passé et que ton VPS est en cours de création.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4">
+          <span class="w-12 h-12 bg-green-300 border-2 border-ink flex items-center justify-center text-xl font-bold flex-shrink-0" style="border:2px solid #1a1a1a">2</span>
+          <div>
+            <p class="font-bold text-lg">Ton VPS est prêt en quelques minutes</p>
+            <p class="text-gray-500">En général, c'est créé en moins de 5 minutes. Tu recevras les informations de connexion (adresse IP, identifiants).</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4">
+          <span class="w-12 h-12 bg-green-300 border-2 border-ink flex items-center justify-center text-xl font-bold flex-shrink-0" style="border:2px solid #1a1a1a">3</span>
+          <div>
+            <p class="font-bold text-lg">Transmets les infos à Fabien</p>
+            <p class="text-gray-500">Envoie à Fabien les identifiants de connexion Hostinger (email + mot de passe du compte, ou l'adresse IP du serveur). Il se chargera de tout installer dessus.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal info-brutal p-5">
+      <p class="font-bold font-display mb-1">🛠️ C'est Fabien qui fait le reste</p>
+      <p class="text-gray-700 text-sm">Tu n'as rien d'autre à faire côté serveur. Fabien va se connecter, installer le système d'exploitation, déployer le site, etc. Toi, tu as fait ta part !</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 11 — ACCÉDER AU PANEL HOSTINGER              -->
+<!-- ================================================================= -->
+<section id="s11-panel-hostinger" class="py-20 px-4 bg-purple-100/30">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-purple-600">Section 10</span> — Accéder à ton espace Hostinger
+    </h2>
+
+    <div class="reveal card-brutal p-8 mb-8">
+      <p class="text-lg text-gray-700 leading-relaxed mb-6">
+        Si un jour tu veux te reconnecter à ton espace Hostinger (pour renouveler, voir les factures, etc.), voilà comment faire :
+      </p>
+
+      <div class="space-y-4">
+        <div class="flex items-start gap-3">
+          <span class="step-number bg-purple-200 text-ink flex-shrink-0 w-10 h-10 text-base">1</span>
+          <div>
+            <p class="font-bold">Va sur <a href="https://www.hostinger.com/fr" target="_blank" class="text-purple-600 underline hover:text-purple-800">hostinger.com/fr</a></p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="step-number bg-purple-200 text-ink flex-shrink-0 w-10 h-10 text-base">2</span>
+          <div>
+            <p class="font-bold">Clique sur "Mon compte" en haut à droite</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="step-number bg-purple-200 text-ink flex-shrink-0 w-10 h-10 text-base">3</span>
+          <div>
+            <p class="font-bold">Connecte-toi avec ton email et mot de passe</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="step-number bg-purple-200 text-ink flex-shrink-0 w-10 h-10 text-base">4</span>
+          <div>
+            <p class="font-bold">Tu arrives sur le <strong>hPanel</strong> — c'est le tableau de bord pour gérer ton VPS</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 12 — CHECKLIST VPS                           -->
+<!-- ================================================================= -->
+<section id="s12-checklist-vps" class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-purple-600">Section 11</span> — Checklist VPS
+    </h2>
+
+    <div class="reveal card-brutal p-8 animate-glow">
+      <h3 class="font-display font-bold text-xl mb-6">Vérifie que tu as bien fait tout ça :</h3>
+
+      <div class="space-y-4">
+        <div class="flex items-center gap-4 p-3 bg-purple-50 border-2 border-ink" style="border:2px solid #1a1a1a">
+          <div class="step-check" onclick="toggleCheck(this)" data-step="6">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <p class="font-bold">Compte Hostinger créé et email confirmé</p>
+        </div>
+        <div class="flex items-center gap-4 p-3 bg-purple-50 border-2 border-ink" style="border:2px solid #1a1a1a">
+          <div class="step-check" onclick="toggleCheck(this)" data-step="7">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <p class="font-bold">Plan KVM 2 commandé et payé</p>
+        </div>
+        <div class="flex items-center gap-4 p-3 bg-purple-50 border-2 border-ink" style="border:2px solid #1a1a1a">
+          <div class="step-check" onclick="toggleCheck(this)" data-step="8">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <p class="font-bold">Infos de connexion transmises à Fabien</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal success-brutal p-6 mt-6 text-center">
+      <p class="text-2xl mb-2">🎉</p>
+      <p class="font-display font-bold text-xl">Bravo, la partie VPS est terminée !</p>
+      <p class="text-gray-600 mt-2">Maintenant, on passe à la clé API. C'est encore plus simple, promis.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 13 — TRANSITION / SÉPARATEUR                 -->
+<!-- ================================================================= -->
+<section id="partie-api" class="py-12 px-4">
+  <div class="max-w-6xl mx-auto">
+    <div class="section-divider mb-12"></div>
+    <div class="reveal text-center">
+      <span class="inline-block bg-flame-500 text-white border-3 border-ink px-6 py-3 font-display font-bold text-lg shadow-brutal animate-ribbon" style="border:3px solid #1a1a1a;box-shadow:4px 4px 0 #1a1a1a">
+        PARTIE 2 — LA CLÉ API ANTHROPIC
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 14 — C'EST QUOI UNE CLÉ API ?                -->
+<!-- ================================================================= -->
+<section id="s14-cest-quoi-api" class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-flame-500">Section 12</span> — C'est quoi une clé API ?
+    </h2>
+
+    <div class="reveal card-brutal p-8 mb-8">
+      <div class="flex items-start gap-4 mb-6">
+        <span class="text-4xl">🔑</span>
+        <div>
+          <h3 class="font-display font-bold text-xl mb-2">Imagine un badge d'accès</h3>
+          <p class="text-gray-600 leading-relaxed">
+            Une <strong>clé API</strong>, c'est comme un <strong>badge d'accès</strong> qui permet au site Vitreflam de communiquer avec Claude (l'intelligence artificielle d'Anthropic). Sans ce badge, le chatbot du site ne peut pas fonctionner. C'est juste un long code texte, genre <code class="bg-gray-100 px-2 py-1 font-mono text-sm border border-gray-300">sk-ant-api03-xxxxx...</code>
+          </p>
+        </div>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-4 mt-6">
+        <div class="bg-flame-100 border-2 border-ink p-4" style="border:2px solid #1a1a1a">
+          <span class="text-2xl block mb-2">🤖</span>
+          <p class="font-bold font-display text-sm">Claude = l'IA du chatbot</p>
+          <p class="text-xs text-gray-500 mt-1">C'est l'intelligence artificielle qui répond aux clients sur le site Vitreflam</p>
+        </div>
+        <div class="bg-sun-100 border-2 border-ink p-4" style="border:2px solid #1a1a1a">
+          <span class="text-2xl block mb-2">🏢</span>
+          <p class="font-bold font-display text-sm">Anthropic = l'entreprise</p>
+          <p class="text-xs text-gray-500 mt-1">C'est la société qui a créé Claude (comme Google a créé Gmail)</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal warning-brutal p-5">
+      <p class="font-bold font-display mb-1">⚠️ Important : la clé API est secrète !</p>
+      <p class="text-gray-700 text-sm">Ne la partage avec personne d'autre que Fabien. C'est comme un mot de passe — si quelqu'un l'a, il peut utiliser ton compte et ça coûte de l'argent.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 15 — CRÉER UN COMPTE CLAUDE                  -->
+<!-- ================================================================= -->
+<section id="s15-creer-compte-claude" class="py-20 px-4 bg-flame-50">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-flame-500">Section 13</span> — Créer un compte sur Claude.ai
+    </h2>
+
+    <p class="reveal text-lg text-gray-600 mb-8">
+      La première chose à faire, c'est de créer un compte sur Claude.ai. C'est gratuit et ça prend 2 minutes :
+    </p>
+
+    <div class="space-y-6">
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-flame-300 text-ink flex-shrink-0">1</div>
+          <div class="flex-1">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-display font-bold text-lg mb-2">Va sur claude.ai</h3>
+                <p class="text-gray-600 mb-4">Clique sur le lien ci-dessous pour aller sur le site de Claude :</p>
+                <a href="https://claude.ai" target="_blank" class="btn-brutal bg-flame-200 px-5 py-3 font-mono text-sm font-bold inline-flex items-center gap-2 hover:bg-flame-300">
+                  🔗 claude.ai
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+              </div>
+              <div class="step-check" onclick="toggleCheck(this)" data-step="9">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-flame-300 text-ink flex-shrink-0">2</div>
+          <div class="flex-1">
+            <h3 class="font-display font-bold text-lg mb-2">Crée ton compte</h3>
+            <p class="text-gray-600 mb-3">Tu vas voir un bouton <strong>"S'inscrire"</strong> ou <strong>"Sign up"</strong>. Clique dessus et :</p>
+            <div class="bg-gray-50 border-2 border-ink p-4 space-y-2 text-sm" style="border:2px solid #1a1a1a">
+              <p>📧 <strong>Email :</strong> Entre ton adresse email (la même que d'habitude, c'est bien)</p>
+              <p>✅ <strong>Vérification :</strong> Tu vas recevoir un code par email, entre-le sur le site</p>
+              <p>👤 <strong>Infos :</strong> Remplis ton nom si demandé</p>
+              <p>📱 <strong>Téléphone :</strong> Il peut te demander ton numéro de téléphone pour vérifier ton identité — c'est normal et sécurisé</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 16 — SE CONNECTER ET TROUVER LE MENU         -->
+<!-- ================================================================= -->
+<section id="s16-connecter-claude" class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-flame-500">Section 14</span> — Se connecter et naviguer
+    </h2>
+
+    <p class="reveal text-lg text-gray-600 mb-8">
+      Une fois connectée, tu arrives sur l'interface de Claude. Ça ressemble à ça :
+    </p>
+
+    <!-- Screenshot Claude interface -->
+    <div class="reveal mb-8">
+      <div class="relative">
+        <img src="img/claude-interface-menu.png" alt="Interface Claude avec menu" class="img-brutal w-full" onclick="openLightbox(this.src)">
+        <div class="absolute top-3 right-3 bg-flame-500 text-white border-2 border-ink px-3 py-1 font-mono text-xs font-bold" style="border:2px solid #1a1a1a">
+          📸 Clique pour agrandir
+        </div>
+      </div>
+      <p class="text-sm text-gray-500 mt-3 font-mono text-center">L'interface Claude — les flèches vertes montrent tous les éléments du menu</p>
+    </div>
+
+    <div class="reveal card-brutal p-8">
+      <h3 class="font-display font-bold text-xl mb-4">Ce que tu vois sur cette page :</h3>
+      <div class="space-y-3">
+        <div class="flex items-start gap-3">
+          <span class="text-xl">📌</span>
+          <div>
+            <p class="font-bold">En haut : le champ de conversation</p>
+            <p class="text-gray-500 text-sm">C'est là où tu peux discuter avec Claude (mais ce n'est pas ce qu'on fait là)</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-xl">📌</span>
+          <div>
+            <p class="font-bold">En bas à gauche : ton nom et les options du menu</p>
+            <p class="text-gray-500 text-sm">C'est là qu'on va trouver le lien vers la Console API</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 17 — TROUVER LA CONSOLE API                  -->
+<!-- ================================================================= -->
+<section id="s17-trouver-console" class="py-20 px-4 bg-flame-50">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-flame-500">Section 15</span> — Trouver la "Console API"
+    </h2>
+
+    <p class="reveal text-lg text-gray-600 mb-8">
+      C'est l'étape clé ! Il faut accéder à la Console API pour créer ta clé. Regarde bien cette image :
+    </p>
+
+    <!-- Screenshot Console API link -->
+    <div class="reveal mb-8">
+      <div class="relative">
+        <img src="img/claude-console-api.png" alt="Lien Console API dans le menu Claude" class="img-brutal w-full" onclick="openLightbox(this.src)">
+        <div class="absolute top-3 right-3 bg-flame-500 text-white border-2 border-ink px-3 py-1 font-mono text-xs font-bold" style="border:2px solid #1a1a1a">
+          📸 Clique pour agrandir
+        </div>
+      </div>
+      <p class="text-sm text-gray-500 mt-3 font-mono text-center">Les flèches montrent où trouver "Console API" dans le menu de gauche</p>
+    </div>
+
+    <div class="space-y-6">
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-flame-300 text-ink flex-shrink-0">1</div>
+          <div class="flex-1">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-display font-bold text-lg mb-2">Clique sur ton nom en bas à gauche</h3>
+                <p class="text-gray-600">En bas à gauche de l'écran, tu vois ton nom (ou ton email). Clique dessus pour ouvrir le menu.</p>
+              </div>
+              <div class="step-check" onclick="toggleCheck(this)" data-step="10">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-flame-300 text-ink flex-shrink-0">2</div>
+          <div class="flex-1">
+            <h3 class="font-display font-bold text-lg mb-2">Tu vois un menu déroulant</h3>
+            <p class="text-gray-600 mb-3">Dans ce menu, tu vas trouver plusieurs options :</p>
+            <div class="bg-gray-50 border-2 border-ink p-4 space-y-1 text-sm font-mono" style="border:2px solid #1a1a1a">
+              <p>├── Paramètres</p>
+              <p>├── Obtenir de l'aide</p>
+              <p>├── Voir toutes les forfaits</p>
+              <p>├── <strong class="text-flame-600 bg-flame-100 px-1">Console API</strong> ← C'est celui-là !</p>
+              <p>├── Télécharger les applis</p>
+              <p>├── ...</p>
+              <p>└── Se déconnecter</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal card-brutal p-6 border-flame-500" style="border-color:#DC2626">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-flame-500 text-white flex-shrink-0">3</div>
+          <div class="flex-1">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-display font-bold text-lg mb-2">Clique sur "Console API"</h3>
+                <p class="text-gray-600">Ça va t'ouvrir un nouvel onglet avec la <strong>plateforme développeur</strong> d'Anthropic. C'est là qu'on crée les clés API.</p>
+                <p class="text-gray-600 mt-2">Tu peux aussi y aller directement via ce lien :</p>
+                <a href="https://console.anthropic.com" target="_blank" class="btn-brutal bg-flame-200 px-5 py-3 font-mono text-sm font-bold inline-flex items-center gap-2 hover:bg-flame-300 mt-2">
+                  🔗 console.anthropic.com
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+              </div>
+              <div class="step-check" onclick="toggleCheck(this)" data-step="11">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 18 — NAVIGUER DANS LA CONSOLE                -->
+<!-- ================================================================= -->
+<section id="s18-naviguer-console" class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-flame-500">Section 16</span> — La Console Anthropic
+    </h2>
+
+    <p class="reveal text-lg text-gray-600 mb-8">
+      Tu es maintenant sur la Console Anthropic (aussi appelée "Claude Console"). C'est le tableau de bord pour gérer tout ce qui est technique. Voilà ce que tu vois :
+    </p>
+
+    <!-- Screenshot Console API keys -->
+    <div class="reveal mb-8">
+      <div class="relative">
+        <img src="img/anthropic-api-keys.png" alt="Console Anthropic - Page API Keys" class="img-brutal w-full" onclick="openLightbox(this.src)">
+        <div class="absolute top-3 right-3 bg-flame-500 text-white border-2 border-ink px-3 py-1 font-mono text-xs font-bold" style="border:2px solid #1a1a1a">
+          📸 Clique pour agrandir
+        </div>
+      </div>
+      <p class="text-sm text-gray-500 mt-3 font-mono text-center">La Console Anthropic — les flèches vertes montrent le menu et la section API keys</p>
+    </div>
+
+    <div class="reveal card-brutal p-8">
+      <h3 class="font-display font-bold text-xl mb-4">Ce que tu vois sur cette page :</h3>
+      <div class="space-y-4">
+        <div class="flex items-start gap-3">
+          <span class="text-xl">📌</span>
+          <div>
+            <p class="font-bold">Menu de gauche</p>
+            <p class="text-gray-500 text-sm">Tu vois : Workbench, Files, Skills, Usage, Cash, Batches, puis plus bas <strong>API keys</strong> — c'est là qu'il faut aller</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-xl">📌</span>
+          <div>
+            <p class="font-bold">Le bouton "API keys" dans le menu</p>
+            <p class="text-gray-500 text-sm">C'est dans la section <strong>"MANAGE"</strong> du menu de gauche. Clique dessus.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-xl">📌</span>
+          <div>
+            <p class="font-bold">La zone principale à droite</p>
+            <p class="text-gray-500 text-sm">C'est là que s'affichent tes clés API existantes et le bouton pour en créer de nouvelles</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 19 — AJOUTER DE L'ARGENT / CRÉDITS           -->
+<!-- ================================================================= -->
+<section id="s19-ajouter-credits" class="py-20 px-4 bg-flame-50">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-flame-500">Section 17</span> — Ajouter de l'argent (crédits API)
+    </h2>
+
+    <div class="reveal card-brutal p-8 mb-8">
+      <p class="text-lg text-gray-700 leading-relaxed mb-6">
+        Avant de créer ta clé API, il faut <strong>ajouter des crédits</strong> (de l'argent) sur ton compte. L'API Claude fonctionne sur un système prépayé : tu charges un montant, et chaque fois que le chatbot Vitreflam répond à un client, ça consomme un tout petit peu de crédits.
+      </p>
+
+      <div class="space-y-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-sun-300 text-ink flex-shrink-0">1</div>
+          <div>
+            <h3 class="font-display font-bold text-lg mb-2">Va dans "Settings" (Paramètres)</h3>
+            <p class="text-gray-600">Dans le menu de gauche de la console, clique sur <strong>"Settings"</strong> (ou l'icône engrenage).</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-sun-300 text-ink flex-shrink-0">2</div>
+          <div>
+            <h3 class="font-display font-bold text-lg mb-2">Va dans "Billing" (Facturation)</h3>
+            <p class="text-gray-600">Dans les paramètres, tu trouveras une section <strong>"Billing"</strong> ou <strong>"Plans & Billing"</strong>. Clique dessus.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-sun-300 text-ink flex-shrink-0">3</div>
+          <div>
+            <h3 class="font-display font-bold text-lg mb-2">Ajoute un moyen de paiement</h3>
+            <p class="text-gray-600 mb-2">Clique sur <strong>"Add Payment Method"</strong> et entre ta carte bancaire (Visa ou Mastercard).</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-sun-300 text-ink flex-shrink-0">4</div>
+          <div>
+            <h3 class="font-display font-bold text-lg mb-2">Charge des crédits</h3>
+            <p class="text-gray-600 mb-2">Tu peux ajouter un montant — <strong>5$ ou 10$ pour commencer, c'est largement suffisant</strong> pour tester. Ça dure longtemps avec l'usage qu'on en fait.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal info-brutal p-5 mb-4">
+      <p class="font-bold font-display mb-1">💡 Combien ça coûte en pratique ?</p>
+      <p class="text-gray-700 text-sm">Chaque réponse du chatbot coûte environ 0,01€ à 0,05€ selon la longueur. Avec 10$, tu as facilement des centaines de conversations. C'est vraiment pas cher.</p>
+    </div>
+
+    <div class="reveal warning-brutal p-5">
+      <p class="font-bold font-display mb-1">⚠️ Mets un plafond de dépenses</p>
+      <p class="text-gray-700 text-sm">Dans la section Billing, tu peux configurer un <strong>"Usage Limit"</strong> (limite d'utilisation). Mets par exemple 20$/mois maximum pour éviter les surprises. Si la limite est atteinte, l'API s'arrête simplement.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 20 — CRÉER UNE CLÉ API                      -->
+<!-- ================================================================= -->
+<section id="s20-creer-cle-api" class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-flame-500">Section 18</span> — Créer ta clé API
+    </h2>
+
+    <p class="reveal text-lg text-gray-600 mb-8">
+      C'est le moment ! On va créer la clé API que Fabien va utiliser pour faire fonctionner le chatbot.
+    </p>
+
+    <div class="space-y-6">
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-flame-300 text-ink flex-shrink-0">1</div>
+          <div class="flex-1">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-display font-bold text-lg mb-2">Va dans "API keys"</h3>
+                <p class="text-gray-600">Dans le menu de gauche de la console, sous la section <strong>"MANAGE"</strong>, clique sur <strong>"API keys"</strong>.</p>
+                <p class="text-gray-600 mt-2">Ou va directement ici :</p>
+                <a href="https://console.anthropic.com/settings/keys" target="_blank" class="btn-brutal bg-flame-200 px-5 py-3 font-mono text-sm font-bold inline-flex items-center gap-2 hover:bg-flame-300 mt-2">
+                  🔗 console.anthropic.com/settings/keys
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+              </div>
+              <div class="step-check" onclick="toggleCheck(this)" data-step="12">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-flame-300 text-ink flex-shrink-0">2</div>
+          <div class="flex-1">
+            <h3 class="font-display font-bold text-lg mb-2">Clique sur "+ Create Key" (Créer une clé)</h3>
+            <p class="text-gray-600 mb-3">Tu verras ce bouton en haut à droite de la page. Clique dessus.</p>
+            <div class="bg-gray-50 border-2 border-ink p-4 text-sm" style="border:2px solid #1a1a1a">
+              <p class="font-bold mb-2">Il va te demander :</p>
+              <p>📝 <strong>Name (Nom) :</strong> Mets quelque chose comme <code class="bg-gray-200 px-1 font-mono">Vitreflam-chatbot</code></p>
+              <p class="mt-1">📁 <strong>Workspace :</strong> Laisse "Default" (par défaut)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal card-brutal p-6 border-flame-500" style="border-color:#DC2626">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-flame-500 text-white flex-shrink-0">3</div>
+          <div class="flex-1">
+            <h3 class="font-display font-bold text-lg mb-2">Ta clé apparaît !</h3>
+            <p class="text-gray-600 mb-3">
+              Après avoir cliqué, ta clé API s'affiche. Elle ressemble à ça :
+            </p>
+            <div class="bg-ink text-green-400 font-mono text-sm p-4 border-2 border-ink overflow-x-auto" style="border:2px solid #1a1a1a">
+              sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 21 — COPIER ET SAUVEGARDER LA CLÉ            -->
+<!-- ================================================================= -->
+<section id="s21-copier-cle" class="py-20 px-4 bg-flame-50">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-flame-500">Section 19</span> — Copier et sauvegarder ta clé
+    </h2>
+
+    <div class="reveal card-brutal p-8 mb-6 border-flame-500 animate-glow" style="border-color:#DC2626">
+      <div class="flex items-start gap-4">
+        <span class="text-4xl">🚨</span>
+        <div>
+          <h3 class="font-display font-bold text-xl mb-2 text-flame-600">TRÈS IMPORTANT !</h3>
+          <p class="text-gray-700 leading-relaxed">
+            La clé ne s'affiche <strong>qu'une seule fois</strong>. Une fois que tu fermes la fenêtre, tu ne pourras plus jamais la revoir. Si tu la perds, il faudra en recréer une nouvelle. Donc :
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-flame-300 text-ink flex-shrink-0">1</div>
+          <div class="flex-1">
+            <h3 class="font-display font-bold text-lg mb-2">Clique sur "Copy" (Copier)</h3>
+            <p class="text-gray-600">Il y a un petit bouton "Copy" à côté de la clé. Clique dessus — la clé est copiée dans ton presse-papier.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal card-brutal p-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-flame-300 text-ink flex-shrink-0">2</div>
+          <div class="flex-1">
+            <h3 class="font-display font-bold text-lg mb-2">Colle-la quelque part en sécurité</h3>
+            <p class="text-gray-600 mb-3">Ouvre un document (Word, Bloc-notes, ou même un email brouillon) et fais <strong>Ctrl+V</strong> pour coller la clé. Sauvegarde ce document.</p>
+            <div class="bg-gray-50 border-2 border-ink p-4 text-sm" style="border:2px solid #1a1a1a">
+              <p class="font-bold mb-1">Exemples de bons endroits :</p>
+              <p>📝 Un fichier texte sur ton ordinateur (genre "cle-api-vitreflam.txt")</p>
+              <p>📧 Un email brouillon que tu t'envoies à toi-même</p>
+              <p>🔒 Un gestionnaire de mots de passe si tu en as un</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 22 — TRANSMETTRE LA CLÉ À FABIEN             -->
+<!-- ================================================================= -->
+<section id="s22-transmettre-cle" class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-flame-500">Section 20</span> — Transmettre la clé à Fabien
+    </h2>
+
+    <div class="reveal card-brutal p-8 mb-8">
+      <p class="text-lg text-gray-700 leading-relaxed mb-6">
+        Maintenant, il faut m'envoyer cette clé pour que je puisse la configurer sur le serveur. Voilà comment faire :
+      </p>
+
+      <div class="space-y-6">
+        <div class="flex items-start gap-4">
+          <div class="step-number bg-teal-300 text-ink flex-shrink-0">💬</div>
+          <div class="flex-1">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-display font-bold text-lg mb-2">Envoie-moi la clé par message</h3>
+                <p class="text-gray-600 mb-3">Le plus simple : envoie-la moi par message (WhatsApp, SMS, ou email). Copie-colle la clé complète — elle commence par <code class="bg-gray-100 px-2 py-0.5 font-mono text-sm border border-gray-300">sk-ant-api03-</code></p>
+              </div>
+              <div class="step-check" onclick="toggleCheck(this)" data-step="13">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal warning-brutal p-5 mb-4">
+      <p class="font-bold font-display mb-1">⚠️ Envoie la clé COMPLÈTE</p>
+      <p class="text-gray-700 text-sm">Assure-toi de copier la clé en entier. Elle est très longue — vérifie que tu n'as pas coupé le début ou la fin. Elle commence toujours par <strong>sk-ant-</strong></p>
+    </div>
+
+    <div class="reveal success-brutal p-5">
+      <p class="font-bold font-display mb-1">✅ Après ça, c'est terminé pour toi !</p>
+      <p class="text-gray-700 text-sm">Une fois que Fabien a la clé, il la configure sur le serveur et le chatbot fonctionne. Tu n'as plus rien à faire de ce côté-là.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 23 — SURVEILLER LA CONSOMMATION              -->
+<!-- ================================================================= -->
+<section id="s23-surveiller" class="py-20 px-4 bg-flame-50">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-flame-500">Section 21</span> — Surveiller ta consommation
+    </h2>
+
+    <div class="reveal card-brutal p-8 mb-8">
+      <p class="text-lg text-gray-700 leading-relaxed mb-6">
+        Si tu veux vérifier combien tu as consommé en crédits API, voilà comment faire :
+      </p>
+
+      <div class="space-y-4">
+        <div class="flex items-start gap-3">
+          <span class="step-number bg-teal-200 text-ink flex-shrink-0 w-10 h-10 text-base">1</span>
+          <div>
+            <p class="font-bold">Va sur <a href="https://console.anthropic.com" target="_blank" class="text-flame-600 underline hover:text-flame-800">console.anthropic.com</a></p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="step-number bg-teal-200 text-ink flex-shrink-0 w-10 h-10 text-base">2</span>
+          <div>
+            <p class="font-bold">Dans le menu de gauche, clique sur <strong>"Usage"</strong></p>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="step-number bg-teal-200 text-ink flex-shrink-0 w-10 h-10 text-base">3</span>
+          <div>
+            <p class="font-bold">Tu vois un graphique avec ta consommation jour par jour</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal info-brutal p-5">
+      <p class="font-bold font-display mb-1">💡 Pas de stress</p>
+      <p class="text-gray-700 text-sm">Avec le plafond de dépenses qu'on a configuré, tu ne risques pas de mauvaise surprise. Et Fabien surveille aussi de son côté.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 24 — CHECKLIST API                           -->
+<!-- ================================================================= -->
+<section id="s24-checklist-api" class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8">
+      <span class="text-flame-500">Section 22</span> — Checklist Clé API
+    </h2>
+
+    <div class="reveal card-brutal p-8 animate-glow">
+      <h3 class="font-display font-bold text-xl mb-6">Vérifie que tu as bien fait tout ça :</h3>
+
+      <div class="space-y-4">
+        <div class="flex items-center gap-4 p-3 bg-flame-50 border-2 border-ink" style="border:2px solid #1a1a1a">
+          <div class="step-check" onclick="toggleCheck(this)" data-step="14a">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <p class="font-bold">Compte Claude.ai créé</p>
+        </div>
+        <div class="flex items-center gap-4 p-3 bg-flame-50 border-2 border-ink" style="border:2px solid #1a1a1a">
+          <div class="step-check" onclick="toggleCheck(this)" data-step="14b">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <p class="font-bold">Crédits ajoutés sur la Console Anthropic</p>
+        </div>
+        <div class="flex items-center gap-4 p-3 bg-flame-50 border-2 border-ink" style="border:2px solid #1a1a1a">
+          <div class="step-check" onclick="toggleCheck(this)" data-step="14c">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <p class="font-bold">Clé API créée et copiée</p>
+        </div>
+        <div class="flex items-center gap-4 p-3 bg-flame-50 border-2 border-ink" style="border:2px solid #1a1a1a">
+          <div class="step-check" onclick="toggleCheck(this)" data-step="14d">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <p class="font-bold">Clé API envoyée à Fabien</p>
+        </div>
+        <div class="flex items-center gap-4 p-3 bg-flame-50 border-2 border-ink" style="border:2px solid #1a1a1a">
+          <div class="step-check" onclick="toggleCheck(this)" data-step="14e">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <p class="font-bold">Plafond de dépenses configuré</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 25 — RÉCAPITULATIF GÉNÉRAL                   -->
+<!-- ================================================================= -->
+<section id="recapitulatif" class="py-20 px-4 bg-gradient-to-br from-purple-100 via-paper to-flame-50">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8 text-center">
+      <span class="text-purple-600">Section 23</span> — Récapitulatif général
+    </h2>
+
+    <div class="grid sm:grid-cols-2 gap-8 mb-12">
+      <!-- VPS Recap -->
+      <div class="reveal card-brutal p-8">
+        <div class="w-16 h-16 bg-purple-300 border-3 border-ink flex items-center justify-center text-3xl mb-4" style="border:3px solid #1a1a1a;box-shadow:3px 3px 0 #1a1a1a">
+          🖥️
+        </div>
+        <h3 class="font-display font-bold text-2xl mb-4">VPS Hostinger</h3>
+        <div class="space-y-2 text-sm text-gray-600">
+          <p>✅ Compte Hostinger créé</p>
+          <p>✅ Plan KVM 2 commandé</p>
+          <p>✅ Serveur en France ou Allemagne</p>
+          <p>✅ Identifiants transmis à Fabien</p>
+        </div>
+        <div class="mt-4 bg-purple-100 border-2 border-ink p-3 text-center font-mono text-sm" style="border:2px solid #1a1a1a">
+          Budget : <strong>9,99€ à 7,99€/mois</strong>
+        </div>
+      </div>
+
+      <!-- API Recap -->
+      <div class="reveal card-brutal p-8">
+        <div class="w-16 h-16 bg-flame-300 border-3 border-ink flex items-center justify-center text-3xl mb-4" style="border:3px solid #1a1a1a;box-shadow:3px 3px 0 #1a1a1a">
+          🔑
+        </div>
+        <h3 class="font-display font-bold text-2xl mb-4">Clé API Anthropic</h3>
+        <div class="space-y-2 text-sm text-gray-600">
+          <p>✅ Compte Claude.ai créé</p>
+          <p>✅ Console API accessible</p>
+          <p>✅ Crédits chargés</p>
+          <p>✅ Clé API créée et transmise</p>
+        </div>
+        <div class="mt-4 bg-flame-100 border-2 border-ink p-3 text-center font-mono text-sm" style="border:2px solid #1a1a1a">
+          Budget : <strong>~5$ à 10$/mois</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal card-brutal p-8 text-center bg-gradient-to-r from-purple-100 to-flame-100">
+      <span class="text-5xl block mb-4">🎉</span>
+      <h3 class="font-display font-bold text-2xl mb-3">T'as tout fait, bravo Laeticia !</h3>
+      <p class="text-gray-600 max-w-lg mx-auto">
+        Maintenant c'est Fabien qui prend le relais pour tout configurer sur le serveur. Le site Vitreflam sera bientôt en ligne avec son chatbot intelligent !
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 26 — FAQ                                     -->
+<!-- ================================================================= -->
+<section id="faq" class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8 text-center">
+      <span class="text-teal-500">Section 24</span> — Questions fréquentes
+    </h2>
+
+    <div class="space-y-4 stagger-children">
+      <!-- FAQ 1 -->
+      <div class="reveal card-brutal overflow-hidden">
+        <button class="faq-toggle w-full text-left p-6 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors" onclick="toggleFaq(this)">
+          <span class="font-display font-bold text-lg">Et si je perds ma clé API ?</span>
+          <span class="faq-arrow text-2xl transition-transform duration-300">+</span>
+        </button>
+        <div class="faq-content hidden px-6 pb-6">
+          <p class="text-gray-600">Pas de panique ! Tu peux en créer une nouvelle sur la Console Anthropic. L'ancienne continue de fonctionner tant qu'elle n'est pas supprimée. Dis-le à Fabien et il mettra la nouvelle clé sur le serveur.</p>
+        </div>
+      </div>
+
+      <!-- FAQ 2 -->
+      <div class="reveal card-brutal overflow-hidden">
+        <button class="faq-toggle w-full text-left p-6 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors" onclick="toggleFaq(this)">
+          <span class="font-display font-bold text-lg">Comment je sais si mon VPS fonctionne ?</span>
+          <span class="faq-arrow text-2xl transition-transform duration-300">+</span>
+        </button>
+        <div class="faq-content hidden px-6 pb-6">
+          <p class="text-gray-600">Connecte-toi sur ton espace Hostinger (<a href="https://www.hostinger.com/fr" target="_blank" class="text-purple-600 underline">hostinger.com/fr</a> → Mon compte). Tu verras l'état de ton VPS dans le tableau de bord. Si c'est vert, tout va bien !</p>
+        </div>
+      </div>
+
+      <!-- FAQ 3 -->
+      <div class="reveal card-brutal overflow-hidden">
+        <button class="faq-toggle w-full text-left p-6 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors" onclick="toggleFaq(this)">
+          <span class="font-display font-bold text-lg">Je peux changer de plan VPS plus tard ?</span>
+          <span class="faq-arrow text-2xl transition-transform duration-300">+</span>
+        </button>
+        <div class="faq-content hidden px-6 pb-6">
+          <p class="text-gray-600">Oui ! Tu peux upgrader ton VPS à tout moment depuis le panneau Hostinger. Par exemple, passer du KVM 2 au KVM 4 si on a besoin de plus de puissance. Mais le KVM 2 est largement suffisant pour commencer.</p>
+        </div>
+      </div>
+
+      <!-- FAQ 4 -->
+      <div class="reveal card-brutal overflow-hidden">
+        <button class="faq-toggle w-full text-left p-6 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors" onclick="toggleFaq(this)">
+          <span class="font-display font-bold text-lg">C'est quoi la différence entre Claude.ai et la Console API ?</span>
+          <span class="faq-arrow text-2xl transition-transform duration-300">+</span>
+        </button>
+        <div class="faq-content hidden px-6 pb-6">
+          <p class="text-gray-600"><strong>Claude.ai</strong> c'est le site pour discuter avec Claude (comme ChatGPT). <strong>La Console API</strong> c'est le tableau de bord technique pour utiliser Claude dans nos applications (comme le chatbot Vitreflam). Deux portes d'entrée vers le même service, mais pour des usages différents.</p>
+        </div>
+      </div>
+
+      <!-- FAQ 5 -->
+      <div class="reveal card-brutal overflow-hidden">
+        <button class="faq-toggle w-full text-left p-6 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors" onclick="toggleFaq(this)">
+          <span class="font-display font-bold text-lg">Et si j'ai un problème ou une question ?</span>
+          <span class="faq-arrow text-2xl transition-transform duration-300">+</span>
+        </button>
+        <div class="faq-content hidden px-6 pb-6">
+          <p class="text-gray-600">Appelle ou envoie un message à Fabien, il est là pour ça ! Il peut aussi te guider par écran partagé si tu bloques quelque part. N'hésite vraiment pas.</p>
+        </div>
+      </div>
+
+      <!-- FAQ 6 -->
+      <div class="reveal card-brutal overflow-hidden">
+        <button class="faq-toggle w-full text-left p-6 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors" onclick="toggleFaq(this)">
+          <span class="font-display font-bold text-lg">Le renouvellement est automatique ?</span>
+          <span class="faq-arrow text-2xl transition-transform duration-300">+</span>
+        </button>
+        <div class="faq-content hidden px-6 pb-6">
+          <p class="text-gray-600"><strong>Pour Hostinger :</strong> Oui, le VPS se renouvelle automatiquement à la fin de la période choisie. Tu peux désactiver le renouvellement automatique dans ton espace Hostinger si tu veux.<br><strong>Pour l'API Anthropic :</strong> C'est du prépayé, donc il n'y a pas de renouvellement auto. Quand les crédits sont épuisés, tu en rajoutes.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--              SECTION 27 — LIENS UTILES                            -->
+<!-- ================================================================= -->
+<section id="s27-liens" class="py-20 px-4 bg-gradient-to-br from-teal-100/30 to-paper">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="reveal font-display text-4xl sm:text-5xl font-bold mb-8 text-center">
+      <span class="text-teal-500">Section 25</span> — Tous les liens utiles
+    </h2>
+
+    <div class="reveal card-brutal p-8">
+      <div class="grid sm:grid-cols-2 gap-6">
+        <!-- Hostinger links -->
+        <div>
+          <h3 class="font-display font-bold text-lg mb-4 flex items-center gap-2">
+            <span class="w-8 h-8 bg-purple-300 border-2 border-ink flex items-center justify-center text-sm" style="border:2px solid #1a1a1a">🖥️</span>
+            Hostinger
+          </h3>
+          <div class="space-y-3">
+            <a href="https://www.hostinger.com/fr/vps" target="_blank" class="flex items-center gap-2 text-purple-600 hover:text-purple-800 font-medium transition-colors group">
+              <span class="group-hover:translate-x-1 transition-transform">→</span>
+              Page VPS Hostinger
+            </a>
+            <a href="https://www.hostinger.com/fr/vps#pricing" target="_blank" class="flex items-center gap-2 text-purple-600 hover:text-purple-800 font-medium transition-colors group">
+              <span class="group-hover:translate-x-1 transition-transform">→</span>
+              Tarifs VPS (voir KVM 2)
+            </a>
+            <a href="https://www.hostinger.com/fr" target="_blank" class="flex items-center gap-2 text-purple-600 hover:text-purple-800 font-medium transition-colors group">
+              <span class="group-hover:translate-x-1 transition-transform">→</span>
+              Mon compte Hostinger
+            </a>
+            <a href="https://www.hostinger.com/fr/support" target="_blank" class="flex items-center gap-2 text-purple-600 hover:text-purple-800 font-medium transition-colors group">
+              <span class="group-hover:translate-x-1 transition-transform">→</span>
+              Support Hostinger
+            </a>
+          </div>
+        </div>
+
+        <!-- Anthropic links -->
+        <div>
+          <h3 class="font-display font-bold text-lg mb-4 flex items-center gap-2">
+            <span class="w-8 h-8 bg-flame-300 border-2 border-ink flex items-center justify-center text-sm" style="border:2px solid #1a1a1a">🔑</span>
+            Anthropic / Claude
+          </h3>
+          <div class="space-y-3">
+            <a href="https://claude.ai" target="_blank" class="flex items-center gap-2 text-flame-600 hover:text-flame-800 font-medium transition-colors group">
+              <span class="group-hover:translate-x-1 transition-transform">→</span>
+              Claude.ai (créer un compte)
+            </a>
+            <a href="https://console.anthropic.com" target="_blank" class="flex items-center gap-2 text-flame-600 hover:text-flame-800 font-medium transition-colors group">
+              <span class="group-hover:translate-x-1 transition-transform">→</span>
+              Console API Anthropic
+            </a>
+            <a href="https://console.anthropic.com/settings/keys" target="_blank" class="flex items-center gap-2 text-flame-600 hover:text-flame-800 font-medium transition-colors group">
+              <span class="group-hover:translate-x-1 transition-transform">→</span>
+              Gérer les clés API
+            </a>
+            <a href="https://console.anthropic.com/settings/billing" target="_blank" class="flex items-center gap-2 text-flame-600 hover:text-flame-800 font-medium transition-colors group">
+              <span class="group-hover:translate-x-1 transition-transform">→</span>
+              Facturation / Crédits
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================= -->
+<!--                         FOOTER                                     -->
+<!-- ================================================================= -->
+<footer class="bg-ink text-white py-12 px-4">
+  <div class="max-w-4xl mx-auto text-center">
+    <div class="flex items-center justify-center gap-3 mb-4">
+      <span class="w-10 h-10 bg-flame-500 border-2 border-white flex items-center justify-center text-white font-bold">V</span>
+      <span class="font-display font-bold text-xl">Vitreflam</span>
+    </div>
+    <p class="text-gray-400 text-sm mb-2">Guide créé avec amour par Fabien pour Laeticia</p>
+    <p class="text-gray-500 text-xs font-mono">Mars 2026 — Si tu as la moindre question, n'hésite pas !</p>
+
+    <!-- Easter egg -->
+    <div class="mt-8">
+      <button onclick="launchConfetti()" class="text-gray-600 hover:text-white transition-colors text-xs font-mono opacity-50 hover:opacity-100">
+        [ clique ici pour la surprise ]
+      </button>
+    </div>
+  </div>
+</footer>
+
+<!-- Back to top button -->
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" class="fixed bottom-6 right-6 w-14 h-14 bg-ink text-white border-3 border-ink shadow-brutal flex items-center justify-center text-xl hover:bg-flame-500 transition-all duration-200 z-40 opacity-0 pointer-events-none no-print" style="border:3px solid #1a1a1a;box-shadow:4px 4px 0 #1a1a1a">
+  ↑
+</button>
+
+<!-- ================================================================= -->
+<!--                         JAVASCRIPT                                 -->
+<!-- ================================================================= -->
+<script>
+// ---- Intersection Observer for reveal animations ----
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => {
+  observer.observe(el);
+});
+
+// ---- Progress bar ----
+function updateProgressBar() {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = (scrollTop / docHeight) * 100;
+  document.getElementById('progress-bar').style.width = progress + '%';
+}
+window.addEventListener('scroll', updateProgressBar);
+
+// ---- Back to top button ----
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('back-to-top');
+  if (window.scrollY > 600) {
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  } else {
+    btn.style.opacity = '0';
+    btn.style.pointerEvents = 'none';
+  }
+});
+
+// ---- Step checkboxes ----
+let checkedSteps = new Set();
+const STORAGE_KEY = 'vitreflam-tuto-vps-api-checks';
+
+// Load saved state
+try {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  saved.forEach(step => checkedSteps.add(step));
+} catch(e) {}
+
+function toggleCheck(el) {
+  const step = el.dataset.step;
+  if (checkedSteps.has(step)) {
+    checkedSteps.delete(step);
+    el.classList.remove('checked');
+  } else {
+    checkedSteps.add(step);
+    el.classList.add('checked');
+    // Mini celebration
+    createMiniSparkle(el);
+  }
+  updateCounter();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...checkedSteps]));
+
+  // Check if all done
+  if (checkedSteps.size >= 14) {
+    setTimeout(() => launchConfetti(), 300);
+  }
+}
+
+function updateCounter() {
+  document.getElementById('checked-count').textContent = checkedSteps.size;
+}
+
+// Restore checkboxes on load
+document.addEventListener('DOMContentLoaded', () => {
+  checkedSteps.forEach(step => {
+    const el = document.querySelector(`[data-step="${step}"]`);
+    if (el) el.classList.add('checked');
+  });
+  updateCounter();
+});
+
+// ---- Mini sparkle effect ----
+function createMiniSparkle(el) {
+  const rect = el.getBoundingClientRect();
+  for (let i = 0; i < 6; i++) {
+    const sparkle = document.createElement('div');
+    sparkle.style.cssText = `
+      position: fixed;
+      width: 6px; height: 6px;
+      background: ${['#22C55E', '#FACC15', '#A855F7', '#DC2626'][Math.floor(Math.random()*4)]};
+      border-radius: 50%;
+      left: ${rect.left + rect.width/2}px;
+      top: ${rect.top + rect.height/2}px;
+      z-index: 1000;
+      pointer-events: none;
+      transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    `;
+    document.body.appendChild(sparkle);
+    requestAnimationFrame(() => {
+      sparkle.style.transform = `translate(${(Math.random()-0.5)*80}px, ${(Math.random()-0.5)*80}px) scale(0)`;
+      sparkle.style.opacity = '0';
+    });
+    setTimeout(() => sparkle.remove(), 700);
+  }
+}
+
+// ---- Confetti easter egg ----
+function launchConfetti() {
+  const colors = ['#DC2626', '#A855F7', '#FACC15', '#22C55E', '#14B8A6', '#3B82F6'];
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.width = (Math.random() * 8 + 5) + 'px';
+    piece.style.height = (Math.random() * 8 + 5) + 'px';
+    piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    piece.style.animationDelay = (Math.random() * 0.5) + 's';
+    if (Math.random() > 0.5) piece.style.borderRadius = '0';
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 5000);
+  }
+}
+
+// ---- FAQ toggle ----
+function toggleFaq(btn) {
+  const content = btn.nextElementSibling;
+  const arrow = btn.querySelector('.faq-arrow');
+
+  if (content.classList.contains('hidden')) {
+    content.classList.remove('hidden');
+    arrow.textContent = '−';
+    arrow.style.transform = 'rotate(0deg)';
+  } else {
+    content.classList.add('hidden');
+    arrow.textContent = '+';
+    arrow.style.transform = 'rotate(0deg)';
+  }
+}
+
+// ---- Lightbox ----
+function openLightbox(src) {
+  const lb = document.getElementById('lightbox');
+  const img = document.getElementById('lightbox-img');
+  img.src = src;
+  lb.classList.add('active');
+}
+
+// Close lightbox on Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.getElementById('lightbox').classList.remove('active');
+  }
+});
+
+// ---- Active nav link tracking ----
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-link');
+
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(section => {
+    const sectionTop = section.offsetTop;
+    if (scrollY >= sectionTop - 200) {
+      current = section.getAttribute('id');
+    }
+  });
+
+  navLinks.forEach(link => {
+    link.classList.remove('active');
+    if (link.getAttribute('href') === '#' + current) {
+      link.classList.add('active');
+    }
+  });
+});
+
+// ---- Laeticia wave easter egg ----
+document.querySelectorAll('.laeticia-wave').forEach(el => {
+  let clicks = 0;
+  el.addEventListener('click', () => {
+    clicks++;
+    if (clicks >= 5) {
+      launchConfetti();
+      clicks = 0;
+    }
+  });
+});
+
+// ---- Smooth anchor scroll offset for fixed nav ----
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      const offset = 70;
+      const targetPosition = target.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+    }
+  });
+});
+
+// ---- Keyboard shortcut: press 'T' to scroll to top ----
+document.addEventListener('keydown', (e) => {
+  if (e.key === 't' && !e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+</script>
+
+</body>
+</html>
